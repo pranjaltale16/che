@@ -25,12 +25,13 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.nio.file.Paths;
 import org.eclipse.che.commons.lang.NameGenerator;
+import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestProjectServiceClient;
 import org.eclipse.che.selenium.core.client.TestUserPreferencesServiceClient;
 import org.eclipse.che.selenium.core.constant.TestGitConstants;
 import org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants;
 import org.eclipse.che.selenium.core.project.ProjectTemplates;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.*;
 import org.eclipse.che.selenium.pageobject.git.Git;
@@ -40,12 +41,13 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** @author Igor Vnokur */
+@Test(groups = TestGroup.GITHUB)
 public class GitColorsTest {
   private static final String PROJECT_NAME = NameGenerator.generate("project", 4);
 
   @Inject private TestWorkspace ws;
   @Inject private Ide ide;
-  @Inject private TestUser productUser;
+  @Inject private DefaultTestUser productUser;
 
   @Inject
   @Named("github.username")
@@ -91,7 +93,7 @@ public class GitColorsTest {
     projectExplorer.waitYellowNode(PROJECT_NAME + "/pom.xml");
 
     // perform init commit
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.waitAndRunCommit("init");
     loader.waitOnClosed();
@@ -143,7 +145,7 @@ public class GitColorsTest {
   @Test(priority = 2)
   public void testNewFileColor() {
     // Create new file
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(PROJECT, NEW, FILE);
     askForValueDialog.waitFormToOpen();
     askForValueDialog.typeAndWaitText("newFile");
@@ -155,7 +157,7 @@ public class GitColorsTest {
     projectExplorer.waitYellowNode(PROJECT_NAME + "/newFile");
 
     // add file to index
-    projectExplorer.selectItem(PROJECT_NAME + "/newFile");
+    projectExplorer.waitAndSelectItem(PROJECT_NAME + "/newFile");
     menu.runCommand(GIT, ADD_TO_INDEX);
     git.waitAddToIndexFormToOpen();
     git.confirmAddToIndexForm();
@@ -198,7 +200,7 @@ public class GitColorsTest {
     editor.waitBlueTab("README.md");
 
     // Perform commit
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.waitAndRunCommit("commit");
     git.waitCommitFormClosed();

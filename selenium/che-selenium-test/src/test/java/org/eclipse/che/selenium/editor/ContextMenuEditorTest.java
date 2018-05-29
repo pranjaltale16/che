@@ -10,19 +10,19 @@
  */
 package org.eclipse.che.selenium.editor;
 
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.CLOSE;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.FIND;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.FORMAT;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.NAVIGATE_FILE_STRUCTURE;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.OPEN_DECLARATION;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.QUICK_DOC;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.QUICK_FIX;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.REDO;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.REFACTORING;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.REFACTORING_MOVE;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.REFACTORING_RENAME;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.EditorContextMenu.UNDO;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.MarkersType.ERROR_MARKER;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.CLOSE;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.FIND;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.FORMAT;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.NAVIGATE_FILE_STRUCTURE;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.OPEN_DECLARATION;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.QUICK_DOC;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.QUICK_FIX;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.REDO;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.REFACTORING;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.REFACTORING_MOVE;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.REFACTORING_RENAME;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator.UNDO;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.MarkerLocator.ERROR;
 
 import com.google.common.base.Joiner;
 import com.google.inject.Inject;
@@ -37,6 +37,7 @@ import org.eclipse.che.selenium.core.client.TestProjectServiceClient;
 import org.eclipse.che.selenium.core.project.ProjectTemplates;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.CodenvyEditor;
+import org.eclipse.che.selenium.pageobject.CodenvyEditor.ContextMenuLocator;
 import org.eclipse.che.selenium.pageobject.Consoles;
 import org.eclipse.che.selenium.pageobject.FileStructure;
 import org.eclipse.che.selenium.pageobject.FindText;
@@ -45,6 +46,7 @@ import org.eclipse.che.selenium.pageobject.Loader;
 import org.eclipse.che.selenium.pageobject.ProjectExplorer;
 import org.eclipse.che.selenium.pageobject.Refactor;
 import org.openqa.selenium.Keys;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -138,6 +140,18 @@ public class ContextMenuEditorTest {
     consoles.closeProcessesArea();
   }
 
+  @AfterMethod
+  public void closeContextMenuAndFileTabs() {
+    // insure context menu is closed
+    if (editor.isContextMenuPresent()) {
+      editor.clickOnItemInContextMenu(ContextMenuLocator.CLOSE);
+    }
+
+    if (editor.isAnyTabsOpened()) {
+      editor.closeAllTabs();
+    }
+  }
+
   @Test
   public void checkFormatContextMenu() {
     projectExplorer.waitVisibleItem(PROJECT_NAME);
@@ -156,6 +170,10 @@ public class ContextMenuEditorTest {
   @Test(priority = 1)
   public void checkUndoRedo() {
     projectExplorer.waitItem(PROJECT_NAME);
+    projectExplorer.scrollToItemByPath(
+        PROJECT_NAME + "/src/main/java/org/eclipse/qa/examples/AppController.java");
+    projectExplorer.openItemByPath(
+        PROJECT_NAME + "/src/main/java/org/eclipse/qa/examples/AppController.java");
     editor.waitActive();
     editor.setCursorToLine(2);
     editor.waitActive();
@@ -178,6 +196,10 @@ public class ContextMenuEditorTest {
   @Test(priority = 2)
   public void checkClose() {
     projectExplorer.waitItem(PROJECT_NAME);
+    projectExplorer.scrollToItemByPath(
+        PROJECT_NAME + "/src/main/java/org/eclipse/qa/examples/AppController.java");
+    projectExplorer.openItemByPath(
+        PROJECT_NAME + "/src/main/java/org/eclipse/qa/examples/AppController.java");
     loader.waitOnClosed();
     editor.waitActive();
     editor.openContextMenuInEditor();
@@ -213,7 +235,7 @@ public class ContextMenuEditorTest {
     editor.setCursorToLine(28);
     editor.typeTextIntoEditor("String s = 5;");
     editor.waitTextIntoEditor("String s = 5;");
-    editor.waitMarkerInPosition(ERROR_MARKER, 28);
+    editor.waitMarkerInPosition(ERROR, 28);
     editor.openContextMenuOnElementInEditor("5");
     editor.clickOnItemInContextMenu(QUICK_FIX);
     editor.waitContextMenuIsNotPresent();
@@ -221,13 +243,15 @@ public class ContextMenuEditorTest {
     editor.selectFirstItemIntoFixErrorPropByEnter();
     editor.setCursorToLine(28);
     editor.waitTextIntoEditor("int s = 5;");
-    editor.waitMarkerDisappears(ERROR_MARKER, 28);
+    editor.waitMarkerInvisibility(ERROR, 28);
     editor.typeTextIntoEditor(Keys.ENTER.toString());
   }
 
   @Test(priority = 5)
   public void checkOpenDeclaration() {
     projectExplorer.waitItem(PROJECT_NAME_2);
+    projectExplorer.openItemByPath(
+        PROJECT_NAME_2 + "/src/main/java/org/eclipse/qa/examples/AppController.java");
     editor.goToCursorPositionVisible(25, 13);
     editor.openContextMenuOnElementInEditor(" ModelAndView");
     editor.clickOnItemInContextMenu(OPEN_DECLARATION);

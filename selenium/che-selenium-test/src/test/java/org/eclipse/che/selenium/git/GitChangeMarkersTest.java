@@ -21,11 +21,12 @@ import com.google.inject.name.Named;
 import java.net.URL;
 import java.nio.file.Paths;
 import org.eclipse.che.commons.lang.NameGenerator;
+import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestProjectServiceClient;
 import org.eclipse.che.selenium.core.client.TestUserPreferencesServiceClient;
 import org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants;
 import org.eclipse.che.selenium.core.project.ProjectTemplates;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.*;
 import org.eclipse.che.selenium.pageobject.git.Git;
@@ -35,6 +36,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** @author Igor Vnokur */
+@Test(groups = TestGroup.GITHUB)
 public class GitChangeMarkersTest {
   private static final String PROJECT_NAME = NameGenerator.generate("GitColors_", 4);
 
@@ -49,7 +51,7 @@ public class GitChangeMarkersTest {
   @Named("github.password")
   private String gitHubPassword;
 
-  @Inject private TestUser productUser;
+  @Inject private DefaultTestUser productUser;
   @Inject private ProjectExplorer projectExplorer;
   @Inject private Menu menu;
   @Inject private AskDialog askDialog;
@@ -86,7 +88,7 @@ public class GitChangeMarkersTest {
     events.waitExpectedMessage(GIT_INITIALIZED_SUCCESS);
 
     // perform init commit
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.waitAndRunCommit("init");
     loader.waitOnClosed();
@@ -121,7 +123,7 @@ public class GitChangeMarkersTest {
   @Test(priority = 3)
   public void testMarkersAfterCommit() {
     // perform  commit
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.waitAndRunCommit("commit");
     loader.waitOnClosed();
@@ -154,7 +156,7 @@ public class GitChangeMarkersTest {
     editor.waitGitModificationMarkerInPosition(13, 13);
 
     // Remove file from index
-    projectExplorer.selectItem(PROJECT_NAME + "/src/com/company/Main.java");
+    projectExplorer.waitAndSelectItem(PROJECT_NAME + "/src/com/company/Main.java");
     menu.runCommand(GIT, REMOVE_FROM_INDEX);
     git.waitRemoveFromIndexFileName("Main");
     git.selectRemoveOnlyFromIndexCheckBox();
@@ -179,7 +181,7 @@ public class GitChangeMarkersTest {
   @Test(priority = 7)
   public void testChangeMarkersOnAddedFile() {
     // Create new file
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(PROJECT, NEW, FILE);
     askForValueDialog.waitFormToOpen();
     askForValueDialog.typeAndWaitText("newFile");

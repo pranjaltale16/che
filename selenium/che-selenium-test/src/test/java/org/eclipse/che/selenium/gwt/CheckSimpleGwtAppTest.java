@@ -13,10 +13,10 @@ package org.eclipse.che.selenium.gwt;
 import static org.eclipse.che.dto.server.DtoFactory.newDto;
 import static org.eclipse.che.selenium.core.constant.TestBuildConstants.BUILD_SUCCESS;
 import static org.eclipse.che.selenium.core.constant.TestCommandsConstants.CUSTOM;
+import static org.eclipse.che.selenium.core.constant.TestProjectExplorerContextMenuConstants.ContextMenuCommandGoals.COMMON;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.APPLICATION_START_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.REDRAW_UI_ELEMENTS_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.workspace.WorkspaceTemplate.UBUNTU_JDK8;
-import static org.eclipse.che.selenium.pageobject.ProjectExplorer.CommandsGoal.COMMON;
 
 import com.google.inject.Inject;
 import java.net.URL;
@@ -29,7 +29,7 @@ import org.eclipse.che.selenium.core.client.TestCommandServiceClient;
 import org.eclipse.che.selenium.core.client.TestProjectServiceClient;
 import org.eclipse.che.selenium.core.client.TestWorkspaceServiceClient;
 import org.eclipse.che.selenium.core.project.ProjectTemplates;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.eclipse.che.selenium.core.utils.WaitUtils;
 import org.eclipse.che.selenium.core.utils.WorkspaceDtoDeserializer;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
@@ -62,7 +62,7 @@ public class CheckSimpleGwtAppTest {
   @Inject private TestWorkspaceServiceClient workspaceServiceClient;
   @Inject private TestProjectServiceClient testProjectServiceClient;
   @Inject private WorkspaceDtoDeserializer workspaceDtoDeserializer;
-  @Inject private TestUser testUser;
+  @Inject private DefaultTestUser testUser;
   @Inject private SeleniumWebDriver seleniumWebDriver;
   private String projectName;
 
@@ -124,7 +124,7 @@ public class CheckSimpleGwtAppTest {
 
     projectExplorer.waitItem(projectName);
     toastLoader.waitAppeareanceAndClosing();
-    projectExplorer.selectItem(projectName);
+    projectExplorer.waitAndSelectItem(projectName);
     projectExplorer.invokeCommandWithContextMenu(COMMON, projectName, BUILD_COMMAND);
     consoles.waitExpectedTextIntoConsole(BUILD_SUCCESS, 600);
     projectExplorer.invokeCommandWithContextMenu(COMMON, projectName, RUN_GWT_COMMAND);

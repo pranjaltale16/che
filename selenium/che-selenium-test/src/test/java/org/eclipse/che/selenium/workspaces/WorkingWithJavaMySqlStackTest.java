@@ -12,14 +12,14 @@ package org.eclipse.che.selenium.workspaces;
 
 import static java.lang.String.format;
 import static org.eclipse.che.selenium.core.constant.TestBuildConstants.BUILD_SUCCESS;
+import static org.eclipse.che.selenium.core.constant.TestProjectExplorerContextMenuConstants.ContextMenuCommandGoals.COMMON;
+import static org.eclipse.che.selenium.core.constant.TestProjectExplorerContextMenuConstants.ContextMenuCommandGoals.RUN;
 import static org.eclipse.che.selenium.core.constant.TestStacksConstants.JAVA_MYSQL;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.APPLICATION_START_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.LOADER_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.LOAD_PAGE_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.PREPARING_WS_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.UPDATING_PROJECT_TIMEOUT_SEC;
-import static org.eclipse.che.selenium.pageobject.ProjectExplorer.CommandsGoal.COMMON;
-import static org.eclipse.che.selenium.pageobject.ProjectExplorer.CommandsGoal.RUN;
 import static org.eclipse.che.selenium.pageobject.ProjectExplorer.FolderTypes.PROJECT_FOLDER;
 import static org.openqa.selenium.Keys.ENTER;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
@@ -32,7 +32,8 @@ import org.eclipse.che.commons.lang.NameGenerator;
 import org.eclipse.che.selenium.core.SeleniumWebDriver;
 import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestWorkspaceServiceClient;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
+import org.eclipse.che.selenium.core.webdriver.SeleniumWebDriverHelper;
 import org.eclipse.che.selenium.pageobject.AskDialog;
 import org.eclipse.che.selenium.pageobject.Consoles;
 import org.eclipse.che.selenium.pageobject.Ide;
@@ -64,7 +65,7 @@ public class WorkingWithJavaMySqlStackTest {
           "The process %s:build and deploy will be terminated after closing console. Do you want to continue?",
           PROJECT_NAME);
 
-  @Inject private TestUser defaultTestUser;
+  @Inject private DefaultTestUser defaultTestUser;
   @Inject private ProjectExplorer projectExplorer;
   @Inject private Loader loader;
   @Inject private Consoles consoles;
@@ -76,6 +77,7 @@ public class WorkingWithJavaMySqlStackTest {
   @Inject private AskDialog askDialog;
   @Inject private MachineTerminal terminal;
   @Inject private SeleniumWebDriver seleniumWebDriver;
+  @Inject private SeleniumWebDriverHelper seleniumWebDriverHelper;
   @Inject private TestWorkspaceServiceClient workspaceServiceClient;
   @Inject private Workspaces workspaces;
   @Inject private Ide ide;
@@ -102,13 +104,12 @@ public class WorkingWithJavaMySqlStackTest {
     projectSourcePage.clickOnAddProjectButton();
     newWorkspace.clickOnCreateButtonAndOpenInIDE();
 
-    seleniumWebDriver.switchFromDashboardIframeToIde(LOADER_TIMEOUT_SEC);
-    currentWindow = seleniumWebDriver.getWindowHandle();
+    currentWindow = seleniumWebDriverHelper.switchToIdeFrameAndWaitAvailability();
     ide.waitOpenedWorkspaceIsReadyToUse();
     projectExplorer.waitItem(PROJECT_NAME, APPLICATION_START_TIMEOUT_SEC);
-    projectExplorer.waitFolderDefinedTypeOfFolderByPath(PROJECT_NAME, PROJECT_FOLDER);
+    projectExplorer.waitDefinedTypeOfFolder(PROJECT_NAME, PROJECT_FOLDER);
     loader.waitOnClosed();
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
 
     // Select the db machine and perform 'show databases'
     projectExplorer.invokeCommandWithContextMenu(COMMON, PROJECT_NAME, "show databases", "db");
@@ -127,11 +128,11 @@ public class WorkingWithJavaMySqlStackTest {
 
     // Run the application
     consoles.clickOnPreviewUrl();
-    seleniumWebDriver.switchToNoneCurrentWindow(currentWindow);
+    seleniumWebDriverHelper.switchToNextWindow(currentWindow);
     checkWebJavaPetclinicAppl();
     seleniumWebDriver.close();
     seleniumWebDriver.switchTo().window(currentWindow);
-    seleniumWebDriver.switchFromDashboardIframeToIde();
+    seleniumWebDriverHelper.switchToIdeFrameAndWaitAvailability();
 
     // Close terminal tab for 'build and deploy' process
     consoles.waitProcessInProcessConsoleTree(BUILD_AND_DEPLOY_PROCESS);

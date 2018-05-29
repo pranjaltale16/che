@@ -22,6 +22,8 @@ import {CheJsonRpcMasterApi} from '../../../components/api/json-rpc/che-json-rpc
  */
 export class DiagnosticsWorkspaceStartCheck {
 
+  static $inject = ['$q', 'lodash', 'cheWorkspace', 'diagnosticsRunningWorkspaceCheck', 'cheBranding', '$location', 'cheJsonRpcApi', 'userDashboardConfig', 'keycloakAuth', 'proxySettings'];
+
   /**
    * Q service for creating delayed promises.
    */
@@ -84,7 +86,6 @@ export class DiagnosticsWorkspaceStartCheck {
 
   /**
    * Default constructor
-   * @ngInject for Dependency injection
    */
   constructor($q: ng.IQService,
               lodash: any,
@@ -179,9 +180,8 @@ export class DiagnosticsWorkspaceStartCheck {
               }
             },
             'recipe': {
-              'content': 'FROM openjdk:8-jre-alpine\nCMD tail -f /dev/null\n',
-              'contentType': 'text/x-dockerfile',
-              'type': 'dockerfile'
+              'content': 'eclipse/ubuntu_jdk8',
+              'type': 'dockerimage'
             }
           }
         },
@@ -226,6 +226,7 @@ export class DiagnosticsWorkspaceStartCheck {
               let workspace = this.cheWorkspace.getWorkspaceById(workspaceId);
               diagnosticCallback.shared('workspace', workspace);
               diagnosticCallback.shared('machineToken', workspace.runtime.machineToken);
+              diagnosticCallback.shared('clientId', this.cheJsonRpcMasterApi.getClientId());
               diagnosticCallback.success('Starting workspace OK');
             });
           });

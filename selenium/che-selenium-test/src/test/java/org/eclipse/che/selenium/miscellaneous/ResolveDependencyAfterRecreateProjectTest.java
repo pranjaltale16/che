@@ -13,11 +13,10 @@ package org.eclipse.che.selenium.miscellaneous;
 import static org.eclipse.che.commons.lang.NameGenerator.generate;
 import static org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants.Workspace.CREATE_PROJECT;
 import static org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants.Workspace.WORKSPACE;
-import static org.eclipse.che.selenium.core.constant.TestProjectExplorerContextMenuConstants.DELETE;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.MarkersType.ERROR_MARKER;
+import static org.eclipse.che.selenium.core.constant.TestProjectExplorerContextMenuConstants.ContextMenuFirstLevelItems.DELETE;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.MarkerLocator.ERROR;
 import static org.eclipse.che.selenium.pageobject.Wizard.SamplesName.WEB_JAVA_SPRING;
 import static org.eclipse.che.selenium.pageobject.Wizard.TypeProject.MAVEN;
-import static org.testng.Assert.fail;
 
 import com.google.inject.Inject;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
@@ -29,7 +28,6 @@ import org.eclipse.che.selenium.pageobject.Menu;
 import org.eclipse.che.selenium.pageobject.NotificationsPopupPanel;
 import org.eclipse.che.selenium.pageobject.ProjectExplorer;
 import org.eclipse.che.selenium.pageobject.Wizard;
-import org.openqa.selenium.TimeoutException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -40,7 +38,8 @@ import org.testng.annotations.Test;
 public class ResolveDependencyAfterRecreateProjectTest {
   private static final String PROJECT_NAME1 = generate("project1", 4);
   private static final String PROJECT_NAME2 = generate("project2", 4);
-  private static final String PATH_FOR_EXPAND =
+  private static final String PATH_TO_EXPAND = "/src/main/java/org.eclipse.che.examples";
+  private static final String PATH_TO_FILE =
       "/src/main/java/org/eclipse/che/examples/GreetingController.java";
 
   @Inject private TestWorkspace workspace;
@@ -66,27 +65,21 @@ public class ResolveDependencyAfterRecreateProjectTest {
     projectExplorer.waitItem(PROJECT_NAME1);
     mavenPluginStatusBar.waitClosingInfoPanel();
     notificationsPopupPanel.waitProgressPopupPanelClose();
-    projectExplorer.quickExpandWithJavaScript();
-    projectExplorer.openItemByPath(PROJECT_NAME1 + PATH_FOR_EXPAND);
+    projectExplorer.expandPathInProjectExplorer(PROJECT_NAME1 + PATH_TO_EXPAND);
+    projectExplorer.openItemByPath(PROJECT_NAME1 + PATH_TO_FILE);
     editor.waitActive();
-    editor.waitAllMarkersDisappear(ERROR_MARKER);
+    editor.waitAllMarkersInvisibility(ERROR);
 
     removeProjectFromUI();
     createProjectFromUI(PROJECT_NAME2);
 
     projectExplorer.waitItem(PROJECT_NAME2);
-    projectExplorer.selectVisibleItem(PROJECT_NAME2);
-    projectExplorer.quickExpandWithJavaScript();
-
-    try {
-      projectExplorer.openItemByPath(PROJECT_NAME2 + PATH_FOR_EXPAND);
-    } catch (TimeoutException ex) {
-      // remove try-catch block after issue has been resolved
-      fail("Known issue https://github.com/eclipse/che/issues/8791");
-    }
+    projectExplorer.waitAndSelectItemByName(PROJECT_NAME2);
+    projectExplorer.expandPathInProjectExplorer(PROJECT_NAME2 + PATH_TO_EXPAND);
+    projectExplorer.openItemByPath(PROJECT_NAME2 + PATH_TO_FILE);
 
     editor.waitActive();
-    editor.waitAllMarkersDisappear(ERROR_MARKER);
+    editor.waitAllMarkersInvisibility(ERROR);
   }
 
   private void removeProjectFromUI() {

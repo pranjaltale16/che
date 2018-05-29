@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.eclipse.che.api.workspace.shared.dto.ProjectConfigDto;
+import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.factory.FactoryTemplate;
 import org.eclipse.che.selenium.core.factory.TestFactory;
 import org.eclipse.che.selenium.core.factory.TestFactoryInitializer;
@@ -27,6 +28,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** @author Mihail Kuznyetsov */
+@Test(groups = TestGroup.GITHUB)
 public class CheckFactoryWithSparseCheckoutTest {
   private static final String PROJECT_NAME = "java-multimodule2";
 
@@ -72,7 +74,7 @@ public class CheckFactoryWithSparseCheckoutTest {
     events.clickEventLogBtn();
     events.waitOpened();
     events.waitExpectedMessage("Project " + PROJECT_NAME + " imported");
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     pullRequestPanel.waitOpenPanel();
     projectExplorer.openItemByPath(PROJECT_NAME);
     projectExplorer.waitItem(PROJECT_NAME + "/my-lib");

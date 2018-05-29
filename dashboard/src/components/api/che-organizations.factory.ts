@@ -32,6 +32,9 @@ const MAIN_URL = '/api/organization';
  * @author Oleksii Orel
  */
 export class CheOrganization implements che.api.ICheOrganization {
+
+  static $inject = ['$resource', '$q', 'cheUser', 'lodash', 'chePageObject', 'resourcesService', 'cheNamespaceRegistry', 'cheResourcesDistribution'];
+
   /**
    * Angular Resource service.
    */
@@ -87,7 +90,6 @@ export class CheOrganization implements che.api.ICheOrganization {
 
   /**
    * Default constructor that is using resource
-   * @ngInject for Dependency injection
    */
   constructor($resource: ng.resource.IResourceService,
               $q: ng.IQService,
@@ -512,7 +514,7 @@ export class CheOrganization implements che.api.ICheOrganization {
       return this.cheResourcesDistribution.fetchAvailableOrganizationResources(organization.id).then(() => {
         let resource = this.cheResourcesDistribution.getOrganizationAvailableResourceByType(organization.id, this.resourceLimits.RAM);
         if (resource.amount === -1) {
-          return 'RAM is not limited'
+          return 'RAM is not limited';
         }
 
         return resource ? 'Available RAM: ' + (resource.amount / 1024) + 'GB' : null;

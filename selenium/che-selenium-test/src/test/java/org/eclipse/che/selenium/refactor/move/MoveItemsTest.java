@@ -84,7 +84,7 @@ public class MoveItemsTest {
     projectExplorer.openItemByPath(pathToPackageInChePrefix + "/r/A0.java");
     editor.waitActive();
     editor.waitTextIntoEditor(contentFromInA);
-    projectExplorer.selectVisibleItem("A0.java");
+    projectExplorer.waitAndSelectItemByName("A0.java");
     menu.runCommand(
         TestMenuCommandsConstants.Assistant.ASSISTANT,
         TestMenuCommandsConstants.Assistant.Refactoring.REFACTORING,
@@ -110,13 +110,13 @@ public class MoveItemsTest {
     editor.closeFileByNameWithSaving("A0");
   }
 
-  @Test(priority = 1)
+  @Test
   public void checkMoveItem1() throws Exception {
     setFieldsForTest("test1");
     projectExplorer.openItemByPath(pathToPackageInChePrefix + "/r/A1.java");
     editor.waitActive();
     editor.waitTextIntoEditor(contentFromInA);
-    projectExplorer.selectItem(pathToPackageInChePrefix + "/r/A1.java");
+    projectExplorer.waitAndSelectItem(pathToPackageInChePrefix + "/r/A1.java");
     projectExplorer.launchRefactorMoveByKeyboard();
     refactor.waitMoveItemFormIsOpen();
     refactor.clickOnExpandIconTree(PROJECT_NAME);
@@ -130,7 +130,7 @@ public class MoveItemsTest {
     editor.closeFileByNameWithSaving("A1");
   }
 
-  @Test(priority = 2)
+  @Test
   public void checkMoveItem2() throws Exception {
     setFieldsForTest("test2");
     setFieldsForTestB("test2");
@@ -140,7 +140,7 @@ public class MoveItemsTest {
     projectExplorer.openItemByPath(pathToPackageInChePrefix + "/r/fred2/B2.java");
     editor.waitActive();
     editor.waitTextIntoEditor(contentFromInB);
-    projectExplorer.selectItem(pathToPackageInChePrefix + "/r/A2.java");
+    projectExplorer.waitAndSelectItem(pathToPackageInChePrefix + "/r/A2.java");
     editor.closeFileByNameWithSaving("B2");
     editor.closeFileByNameWithSaving("A2");
     menu.runCommand(
@@ -165,7 +165,7 @@ public class MoveItemsTest {
     editor.closeFileByNameWithSaving("B2");
   }
 
-  @Test(priority = 3)
+  @Test
   public void checkMoveItem3() throws Exception {
     setFieldsForTest("test3");
     setFieldsForTestB("test3");
@@ -175,7 +175,7 @@ public class MoveItemsTest {
     projectExplorer.openItemByPath(pathToPackageInChePrefix + "/r/fred3/B3.java");
     editor.waitActive();
     editor.waitTextIntoEditor(contentFromInB);
-    projectExplorer.selectItem(pathToPackageInChePrefix + "/r/r/A3.java");
+    projectExplorer.waitAndSelectItem(pathToPackageInChePrefix + "/r/r/A3.java");
     projectExplorer.launchRefactorMoveByKeyboard();
     refactor.waitMoveItemFormIsOpen();
     refactor.clickOnExpandIconTree(PROJECT_NAME);
@@ -193,13 +193,13 @@ public class MoveItemsTest {
     editor.closeFileByNameWithSaving("B3");
   }
 
-  @Test(priority = 4)
+  @Test
   public void checkMoveItem5() throws Exception {
     setFieldsForTest("test5");
     projectExplorer.openItemByPath(pathToPackageInChePrefix + "/r/A5.java");
     editor.waitActive();
     editor.waitTextIntoEditor(contentFromInA);
-    projectExplorer.selectItem(pathToPackageInChePrefix + "/r/A5.java");
+    projectExplorer.waitAndSelectItem(pathToPackageInChePrefix + "/r/A5.java");
     projectExplorer.launchRefactorMoveByKeyboard();
     refactor.waitMoveItemFormIsOpen();
     refactor.clickOnExpandIconTree(PROJECT_NAME);
@@ -215,13 +215,13 @@ public class MoveItemsTest {
     editor.closeFileByNameWithSaving("A5");
   }
 
-  @Test(priority = 5)
+  @Test
   public void checkMoveItem6() throws Exception {
     setFieldsForTest("test6");
     projectExplorer.openItemByPath(pathToPackageInChePrefix + "/r/A6.java");
     editor.waitActive();
     editor.waitTextIntoEditor(contentFromInA);
-    projectExplorer.selectItem(pathToPackageInChePrefix + "/r/A6.java");
+    projectExplorer.waitAndSelectItem(pathToPackageInChePrefix + "/r/A6.java");
     projectExplorer.launchRefactorMoveByKeyboard();
     refactor.waitMoveItemFormIsOpen();
     refactor.clickOnExpandIconTree(PROJECT_NAME);
@@ -235,13 +235,13 @@ public class MoveItemsTest {
     editor.closeFileByNameWithSaving("A6");
   }
 
-  @Test(priority = 6)
+  @Test
   public void checkMoveItem7() throws Exception {
     setFieldsForTest("test7");
     projectExplorer.openItemByPath(pathToPackageInChePrefix + "/r/A7.java");
     editor.waitActive();
     editor.waitTextIntoEditor(contentFromInA);
-    projectExplorer.selectItem(pathToPackageInChePrefix + "/r/A7.java");
+    projectExplorer.waitAndSelectItem(pathToPackageInChePrefix + "/r/A7.java");
     menu.runCommand(
         TestMenuCommandsConstants.Assistant.ASSISTANT,
         TestMenuCommandsConstants.Assistant.Refactoring.REFACTORING,
@@ -260,13 +260,13 @@ public class MoveItemsTest {
     editor.closeFileByNameWithSaving("A7");
   }
 
-  @Test(priority = 7)
+  @Test
   public void checkMoveItem8() throws Exception {
     setFieldsForTest("test8");
     projectExplorer.openItemByPath(pathToPackageInChePrefix + "/java/lang/reflect/Klass.java");
     editor.waitActive();
     editor.waitTextIntoEditor(contentFromInA);
-    projectExplorer.selectItem(pathToPackageInChePrefix + "/java/lang/reflect/Klass.java");
+    projectExplorer.waitAndSelectItem(pathToPackageInChePrefix + "/java/lang/reflect/Klass.java");
     projectExplorer.launchRefactorMoveByKeyboard();
     refactor.waitMoveItemFormIsOpen();
     refactor.clickOnExpandIconTree(PROJECT_NAME);
@@ -281,13 +281,13 @@ public class MoveItemsTest {
     editor.closeFileByNameWithSaving("Klass");
   }
 
-  @Test(priority = 8)
+  @Test
   public void checkMoveItem9() throws Exception {
     setFieldsForTest("test9");
     projectExplorer.openItemByPath(pathToPackageInChePrefix + "/r/A9.java");
     editor.waitActive();
     editor.waitTextIntoEditor(contentFromInA);
-    projectExplorer.selectItem(pathToPackageInChePrefix + "/r/A9.java");
+    projectExplorer.waitAndSelectItem(pathToPackageInChePrefix + "/r/A9.java");
     projectExplorer.launchRefactorMoveByKeyboard();
     refactor.waitMoveItemFormIsOpen();
     refactor.clickOnExpandIconTree(PROJECT_NAME);

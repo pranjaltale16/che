@@ -15,6 +15,7 @@ import {WorkspaceDetailsService} from './workspace-details.service';
 import IdeSvc from '../../ide/ide.service';
 import {WorkspacesService} from '../workspaces.service';
 import {ICheEditModeOverlayConfig} from '../../../components/widget/edit-mode-overlay/che-edit-mode-overlay.directive';
+import {IEnvironmentManagerMachine} from '../../../components/api/environment/environment-manager-machine';
 
 export  interface IInitData {
   namespaceId: string;
@@ -22,7 +23,7 @@ export  interface IInitData {
   workspaceDetails: che.IWorkspace;
 }
 
-const TAB: Array<string> = ['Overview', 'Projects', 'Machines', 'Installers', 'Servers', 'Env_Variables', 'Volumes', 'Config', 'SSH'];
+const TAB: Array<string> = ['Overview', 'Projects', 'Machines', 'Installers', 'Servers', 'Env_Variables', 'Volumes', 'Config', 'SSH', 'Tools'];
 
 /**
  * @ngdoc controller
@@ -33,12 +34,16 @@ const TAB: Array<string> = ['Overview', 'Projects', 'Machines', 'Installers', 'S
  * @author Oleksii Orel
  */
 export class WorkspaceDetailsController {
+
+  static $inject = ['$location', '$log', '$scope', 'lodash', 'cheNotification', 'cheWorkspace', 'ideSvc', 'workspaceDetailsService', 'initData', '$timeout', 'workspacesService'];
+
   /**
    * Overlay panel configuration.
    */
   editOverlayConfig: ICheEditModeOverlayConfig;
   workspaceDetails: che.IWorkspace;
   workspacesService: WorkspacesService;
+  private lodash: any;
   private $scope: ng.IScope;
   private $log: ng.ILogService;
   private $location: ng.ILocationService;
@@ -59,6 +64,7 @@ export class WorkspaceDetailsController {
   private tab: { [key: string]: string } = {};
   private errorMessage: string = '';
   private tabsValidationTimeout: ng.IPromise<any>;
+  private toolsFilter: Function;
   /**
    * There are unsaved changes to apply (with restart) when is't <code>true</code>.
    */
@@ -66,11 +72,11 @@ export class WorkspaceDetailsController {
 
   /**
    * Default constructor that is using resource injection
-   * @ngInject for Dependency injection
    */
   constructor($location: ng.ILocationService,
               $log: ng.ILogService,
               $scope: ng.IScope,
+              lodash: any,
               cheNotification: CheNotification,
               cheWorkspace: CheWorkspace,
               ideSvc: IdeSvc,
@@ -82,6 +88,7 @@ export class WorkspaceDetailsController {
     this.$scope = $scope;
     this.$timeout = $timeout;
     this.$location = $location;
+    this.lodash = lodash;
     this.cheNotification = cheNotification;
     this.cheWorkspace = cheWorkspace;
     this.ideSvc = ideSvc;
@@ -156,6 +163,12 @@ export class WorkspaceDetailsController {
           this.cancelConfigChanges();
         }
       }
+    };
+
+    this.toolsFilter = (machine: IEnvironmentManagerMachine) => {
+      let serverAttributes = this.lodash.pluck(machine.servers, 'attributes');
+      let types = this.lodash.pluck(serverAttributes, 'type');
+      return types.indexOf('ide') >= 0;
     };
   }
 

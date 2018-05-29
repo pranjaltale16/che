@@ -11,16 +11,19 @@
 package org.eclipse.che.api.project.server.impl;
 
 import static java.io.File.separator;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.eclipse.che.api.fs.server.WsPathUtils.absolutize;
+import static org.eclipse.che.api.fs.server.WsPathUtils.isRoot;
 import static org.eclipse.che.api.fs.server.WsPathUtils.nameOf;
 import static org.eclipse.che.api.fs.server.WsPathUtils.resolve;
 import static org.eclipse.che.api.project.server.impl.FileItemUtils.parseDir;
 import static org.eclipse.che.api.project.server.impl.FileItemUtils.parseFile;
 import static org.eclipse.che.api.project.server.impl.ProjectDtoConverter.asDto;
 import static org.eclipse.che.api.project.server.notification.ProjectItemModifiedEvent.EventType.UPDATED;
+import static org.eclipse.che.api.project.shared.Constants.CHE_DIR;
 import static org.eclipse.che.api.project.shared.Constants.EVENT_IMPORT_OUTPUT_PROGRESS;
 import static org.eclipse.che.dto.server.DtoFactory.newDto;
 
@@ -62,6 +65,7 @@ import org.eclipse.che.api.fs.server.FsManager;
 import org.eclipse.che.api.project.server.ProjectManager;
 import org.eclipse.che.api.project.server.ProjectService;
 import org.eclipse.che.api.project.server.notification.ProjectCreatedEvent;
+import org.eclipse.che.api.project.server.notification.ProjectDeletedEvent;
 import org.eclipse.che.api.project.server.notification.ProjectItemModifiedEvent;
 import org.eclipse.che.api.project.server.type.ProjectTypeResolution;
 import org.eclipse.che.api.project.shared.dto.CopyOptions;
@@ -224,7 +228,11 @@ public class ProjectServiceApi {
     wsPath = absolutize(wsPath);
 
     if (projectManager.isRegistered(wsPath)) {
-      projectManager.delete(wsPath);
+      projectManager
+          .delete(wsPath)
+          .map(RegisteredProject::getPath)
+          .map(ProjectDeletedEvent::new)
+          .ifPresent(eventService::publish);
     } else {
       fsManager.delete(wsPath);
     }
@@ -517,8 +525,6 @@ public class ProjectServiceApi {
 
     fsManager.unzip(wsPath, zip, skipFirstLevel);
 
-    eventService.publish(new ProjectCreatedEvent(wsPath));
-
     return Response.created(
             serviceContext
                 .getBaseUriBuilder()
@@ -558,7 +564,7 @@ public class ProjectServiceApi {
       throws NotFoundException, ForbiddenException, ServerException, IOException {
     wsPath = absolutize(wsPath);
 
-    Set<String> wsPaths = fsManager.getAllChildrenWsPaths(wsPath);
+    Set<String> wsPaths = applyTreeFilter(wsPath, fsManager.getAllChildrenWsPaths(wsPath));
     Set<ItemReference> itemReferences = fsDtoConverter.asDto(wsPaths);
 
     List<ItemReference> result =
@@ -719,7 +725,9 @@ public class ProjectServiceApi {
     }
 
     Set<String> childrenWsPaths =
-        includeFiles ? fsManager.getAllChildrenWsPaths(wsPath) : fsManager.getDirWsPaths(wsPath);
+        includeFiles
+            ? applyTreeFilter(wsPath, fsManager.getAllChildrenWsPaths(wsPath))
+            : applyTreeFilter(wsPath, fsManager.getDirWsPaths(wsPath));
 
     List<TreeElement> nodes = new ArrayList<>(childrenWsPaths.size());
     for (String childWsPath : childrenWsPaths) {
@@ -738,6 +746,17 @@ public class ProjectServiceApi {
     }
 
     return vcsStatusInjector.injectVcsStatusTreeElements(nodes);
+  }
+
+  private Set<String> applyTreeFilter(String parentWsPath, Set<String> childrenWsPaths) {
+    if (!isRoot(parentWsPath)) {
+      return childrenWsPaths;
+    }
+
+    String rootCheDir = absolutize(CHE_DIR);
+    Set<String> copy = new HashSet<>(childrenWsPaths);
+    copy.removeIf(rootCheDir::equals);
+    return unmodifiableSet(copy);
   }
 
   private ItemReference injectFileLinks(ItemReference itemReference) {

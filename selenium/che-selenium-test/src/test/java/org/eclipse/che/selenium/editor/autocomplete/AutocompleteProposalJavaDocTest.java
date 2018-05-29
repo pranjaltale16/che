@@ -10,15 +10,12 @@
  */
 package org.eclipse.che.selenium.editor.autocomplete;
 
-import static org.testng.Assert.fail;
-
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 import org.eclipse.che.selenium.core.client.TestProjectServiceClient;
 import org.eclipse.che.selenium.core.project.ProjectTemplates;
-import org.eclipse.che.selenium.core.utils.BrowserLogsUtil;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.CodenvyEditor;
 import org.eclipse.che.selenium.pageobject.Ide;
@@ -26,7 +23,6 @@ import org.eclipse.che.selenium.pageobject.Loader;
 import org.eclipse.che.selenium.pageobject.NotificationsPopupPanel;
 import org.eclipse.che.selenium.pageobject.ProjectExplorer;
 import org.openqa.selenium.Keys;
-import org.openqa.selenium.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
@@ -51,7 +47,6 @@ public class AutocompleteProposalJavaDocTest {
   @Inject private CodenvyEditor editor;
   @Inject private NotificationsPopupPanel notificationsPopupPanel;
   @Inject private TestProjectServiceClient testProjectServiceClient;
-  @Inject private BrowserLogsUtil browserLogsUtil;
 
   @BeforeClass
   public void setup() throws Exception {
@@ -65,7 +60,7 @@ public class AutocompleteProposalJavaDocTest {
     ide.open(workspace);
     loader.waitOnClosed();
     projectExplorer.waitItem(PROJECT);
-    projectExplorer.selectItem(PROJECT);
+    projectExplorer.waitAndSelectItem(PROJECT);
     notificationsPopupPanel.waitProgressPopupPanelClose();
 
     projectExplorer.expandPathInProjectExplorerAndOpenFile(
@@ -89,7 +84,7 @@ public class AutocompleteProposalJavaDocTest {
     editor.waitActive();
     loader.waitOnClosed();
     editor.goToCursorPositionVisible(30, 30);
-    launchAutocompleteAndWaitContainer();
+    editor.launchAutocompleteAndWaitContainer();
     editor.selectAutocompleteProposal("concat(String part1, String part2, char divider) : String");
 
     // then
@@ -208,39 +203,5 @@ public class AutocompleteProposalJavaDocTest {
             + "<dl><dt>Parameters:</dt>"
             + "<dd><b>msg</b>"
             + "  the message string to be logged</dd></dl>.*");
-  }
-
-  private void launchAutocompleteAndWaitContainer() throws Exception {
-    try {
-      editor.launchAutocompleteAndWaitContainer();
-    } catch (TimeoutException ex) {
-      logExternalLibraries();
-      logProjectTypeChecking();
-      logProjectLanguageChecking();
-      browserLogsUtil.storeLogs();
-
-      // remove try-catch block after issue has been resolved
-      fail("Known issue https://github.com/eclipse/che/issues/7161", ex);
-    }
-  }
-
-  private void logExternalLibraries() throws Exception {
-    testProjectServiceClient
-        .getExternalLibraries(workspace.getId(), PROJECT)
-        .forEach(library -> LOG.info("project external library:  {}", library));
-  }
-
-  private void logProjectTypeChecking() throws Exception {
-    LOG.info(
-        "Project type of the {} project is \"maven\" - {}",
-        PROJECT,
-        testProjectServiceClient.checkProjectType(workspace.getId(), PROJECT, "maven"));
-  }
-
-  private void logProjectLanguageChecking() throws Exception {
-    LOG.info(
-        "Project language of the {} project is \"java\" - {}",
-        PROJECT,
-        testProjectServiceClient.checkProjectLanguage(workspace.getId(), PROJECT, "java"));
   }
 }

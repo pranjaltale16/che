@@ -43,7 +43,7 @@ public class LabelsTest {
     Map<String, String> serialized =
         Labels.newSerializer()
             .machineName("dev-machine")
-            .runtimeId(new RuntimeIdentityImpl("workspace123", "my-env", "owner"))
+            .runtimeId(new RuntimeIdentityImpl("workspace123", "my-env", "id"))
             .server(
                 "my-server1/http",
                 new ServerConfigImpl("8000/tcp", "http", "/api/info", emptyMap()))
@@ -59,7 +59,7 @@ public class LabelsTest {
             .put("org.eclipse.che.machine.name", "dev-machine")
             .put("org.eclipse.che.workspace.id", "workspace123")
             .put("org.eclipse.che.workspace.env", "my-env")
-            .put("org.eclipse.che.workspace.owner", "owner")
+            .put("org.eclipse.che.workspace.owner.id", "id")
             .put("org.eclipse.che.server.my-server1/http.port", "8000/tcp")
             .put("org.eclipse.che.server.my-server1/http.protocol", "http")
             .put("org.eclipse.che.server.my-server1/http.path", "/api/info")
@@ -89,7 +89,7 @@ public class LabelsTest {
             .put("org.eclipse.che.machine.name", "dev-machine")
             .put("org.eclipse.che.workspace.id", "workspace123")
             .put("org.eclipse.che.workspace.env", "my-env")
-            .put("org.eclipse.che.workspace.owner", "owner")
+            .put("org.eclipse.che.workspace.owner.id", "id")
             .put("org.eclipse.che.server.my-server1/http.port", "8000/tcp")
             .put("org.eclipse.che.server.my-server1/http.protocol", "http")
             .put("org.eclipse.che.server.my-server1/http.path", "/api/info")
@@ -121,7 +121,7 @@ public class LabelsTest {
     RuntimeIdentity runtimeId = deserializer.runtimeId();
     assertEquals(runtimeId.getWorkspaceId(), "workspace123", "workspace id");
     assertEquals(runtimeId.getEnvName(), "my-env", "workspace environment name");
-    assertEquals(runtimeId.getOwner(), "owner", "workspace owner");
+    assertEquals(runtimeId.getOwnerId(), "id", "workspace owner id");
 
     Map<String, ServerConfig> servers = deserializer.servers();
     assertEquals(servers, expectedServers);

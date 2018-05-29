@@ -42,7 +42,7 @@ import org.eclipse.che.api.workspace.server.token.MachineTokenProvider;
 public class ServersChecker {
   // Is used to define servers which will be checked by this server checker class.
   private static final Set<String> LIVENESS_SERVERS =
-      ImmutableSet.of("wsagent/http", "exec-agent/http", "terminal");
+      ImmutableSet.of("wsagent/http", "exec-agent/http", "terminal", "theia");
   private final RuntimeIdentity runtimeIdentity;
   private final String machineName;
   private final Map<String, ? extends Server> servers;
@@ -51,7 +51,7 @@ public class ServersChecker {
 
   private Timer timer;
   private long resultTimeoutSeconds;
-  private CompletableFuture result;
+  private CompletableFuture<?> result;
 
   /**
    * Creates instance of this class.
@@ -83,7 +83,8 @@ public class ServersChecker {
    * @throws InternalInfrastructureException if check of a server failed due to an unexpected error
    * @throws InfrastructureException if check of a server failed due to an error
    */
-  public void startAsync(Consumer<String> serverReadinessHandler) throws InfrastructureException {
+  public CompletableFuture<?> startAsync(Consumer<String> serverReadinessHandler)
+      throws InfrastructureException {
     timer = new Timer("ServersChecker", true);
     List<ServerChecker> serverCheckers = getServerCheckers();
     // should be completed with an exception if a server considered unavailable
@@ -112,6 +113,7 @@ public class ServersChecker {
     for (ServerChecker serverChecker : serverCheckers) {
       serverChecker.start();
     }
+    return result;
   }
 
   /**
@@ -186,7 +188,10 @@ public class ServersChecker {
 
       url =
           UriBuilder.fromUri(serverUrl)
-              .queryParam("token", machineTokenProvider.getToken(runtimeIdentity.getWorkspaceId()))
+              .queryParam(
+                  "token",
+                  machineTokenProvider.getToken(
+                      runtimeIdentity.getOwnerId(), runtimeIdentity.getWorkspaceId()))
               .build()
               .toURL();
     } catch (MalformedURLException e) {

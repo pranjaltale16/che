@@ -11,6 +11,7 @@
 package org.eclipse.che.workspace.infrastructure.openshift.project;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.Route;
@@ -32,29 +33,45 @@ import org.eclipse.che.workspace.infrastructure.openshift.OpenShiftClientFactory
 public class OpenShiftProject extends KubernetesNamespace {
 
   private final OpenShiftRoutes routes;
+  private final OpenShiftClientFactory clientFactory;
 
   @VisibleForTesting
   OpenShiftProject(
+      OpenShiftClientFactory clientFactory,
       String workspaceId,
+      String name,
       KubernetesPods pods,
       KubernetesServices services,
       OpenShiftRoutes routes,
       KubernetesPersistentVolumeClaims pvcs,
       KubernetesIngresses ingresses) {
-    super(workspaceId, pods, services, pvcs, ingresses);
+    super(clientFactory, workspaceId, name, pods, services, pvcs, ingresses);
+    this.clientFactory = clientFactory;
     this.routes = routes;
   }
 
-  public OpenShiftProject(OpenShiftClientFactory clientFactory, String name, String workspaceId)
-      throws InfrastructureException {
-    super(clientFactory, name, workspaceId, false);
+  public OpenShiftProject(OpenShiftClientFactory clientFactory, String name, String workspaceId) {
+    super(clientFactory, name, workspaceId);
+    this.clientFactory = clientFactory;
     this.routes = new OpenShiftRoutes(name, workspaceId, clientFactory);
-    doPrepare(name, clientFactory.create());
   }
 
-  private void doPrepare(String name, OpenShiftClient osClient) throws InfrastructureException {
-    if (get(name, osClient) == null) {
-      create(name, osClient);
+  /**
+   * Prepare project for using.
+   *
+   * <p>Preparing includes creating if needed and waiting for default service account.
+   *
+   * @throws InfrastructureException if any exception occurs during namespace preparing
+   */
+  void prepare() throws InfrastructureException {
+    String workspaceId = getWorkspaceId();
+    String projectName = getName();
+
+    KubernetesClient kubeClient = clientFactory.create(workspaceId);
+    OpenShiftClient osClient = clientFactory.createOC(workspaceId);
+
+    if (get(projectName, osClient) == null) {
+      create(projectName, kubeClient, osClient);
     }
   }
 
@@ -68,16 +85,17 @@ public class OpenShiftProject extends KubernetesNamespace {
     doRemove(routes::delete, services()::delete, pods()::delete);
   }
 
-  private void create(String projectName, OpenShiftClient client) throws InfrastructureException {
+  private void create(String projectName, KubernetesClient kubeClient, OpenShiftClient ocClient)
+      throws InfrastructureException {
     try {
-      client
+      ocClient
           .projectrequests()
           .createNew()
           .withNewMetadata()
           .withName(projectName)
           .endMetadata()
           .done();
-      waitDefaultServiceAccount(projectName, client);
+      waitDefaultServiceAccount(projectName, kubeClient);
     } catch (KubernetesClientException e) {
       throw new KubernetesInfrastructureException(e);
     }

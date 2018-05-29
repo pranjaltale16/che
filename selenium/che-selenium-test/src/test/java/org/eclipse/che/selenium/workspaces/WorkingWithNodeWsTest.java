@@ -10,19 +10,20 @@
  */
 package org.eclipse.che.selenium.workspaces;
 
+import static org.eclipse.che.selenium.core.constant.TestProjectExplorerContextMenuConstants.ContextMenuCommandGoals.RUN;
 import static org.eclipse.che.selenium.core.constant.TestStacksConstants.NODE;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.APPLICATION_START_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.LOAD_PAGE_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.PREPARING_WS_TIMEOUT_SEC;
-import static org.eclipse.che.selenium.pageobject.ProjectExplorer.CommandsGoal.BUILD;
-import static org.eclipse.che.selenium.pageobject.ProjectExplorer.CommandsGoal.RUN;
 import static org.openqa.selenium.support.ui.ExpectedConditions.visibilityOfElementLocated;
 
 import com.google.inject.Inject;
 import org.eclipse.che.commons.lang.NameGenerator;
 import org.eclipse.che.selenium.core.SeleniumWebDriver;
 import org.eclipse.che.selenium.core.client.TestWorkspaceServiceClient;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.constant.TestProjectExplorerContextMenuConstants.ContextMenuCommandGoals;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
+import org.eclipse.che.selenium.core.webdriver.SeleniumWebDriverHelper;
 import org.eclipse.che.selenium.pageobject.AskDialog;
 import org.eclipse.che.selenium.pageobject.Consoles;
 import org.eclipse.che.selenium.pageobject.Ide;
@@ -47,7 +48,7 @@ public class WorkingWithNodeWsTest {
   private static final String ASK_DIALOG_MSG_ANGULAR_APP =
       "The process web-nodejs-simple:run will be terminated after closing console. Do you want to continue?";
 
-  @Inject private TestUser defaultTestUser;
+  @Inject private DefaultTestUser defaultTestUser;
   @Inject private Ide ide;
   @Inject private ProjectExplorer projectExplorer;
   @Inject private Consoles consoles;
@@ -58,6 +59,7 @@ public class WorkingWithNodeWsTest {
   @Inject private WorkspaceDetails workspaceDetails;
   @Inject private AskDialog askDialog;
   @Inject private SeleniumWebDriver seleniumWebDriver;
+  @Inject private SeleniumWebDriverHelper seleniumWebDriverHelper;
   @Inject private TestWorkspaceServiceClient workspaceServiceClient;
   @Inject private Workspaces workspaces;
 
@@ -84,14 +86,14 @@ public class WorkingWithNodeWsTest {
     projectSourcePage.clickOnAddProjectButton();
     newWorkspace.clickOnCreateButtonAndOpenInIDE();
 
-    seleniumWebDriver.switchFromDashboardIframeToIde();
-    currentWindow = seleniumWebDriver.getWindowHandle();
+    currentWindow = seleniumWebDriverHelper.switchToIdeFrameAndWaitAvailability();
     ide.waitOpenedWorkspaceIsReadyToUse();
     projectExplorer.waitItem(PROJECT_NAME);
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
 
     // Perform run web nodeJs application
-    consoles.startCommandFromProcessesArea("dev-machine", BUILD, INSTALL_DEPENDENCIES_PROCESS);
+    consoles.startCommandFromProcessesArea(
+        "dev-machine", ContextMenuCommandGoals.BUILD, INSTALL_DEPENDENCIES_PROCESS);
     consoles.waitTabNameProcessIsPresent(INSTALL_DEPENDENCIES_PROCESS);
     consoles.waitExpectedTextIntoConsole("bower_components/angular", APPLICATION_START_TIMEOUT_SEC);
 
@@ -102,19 +104,19 @@ public class WorkingWithNodeWsTest {
     // Check the preview url is present after refreshing
     consoles.waitPreviewUrlIsPresent();
     seleniumWebDriver.navigate().refresh();
-    seleniumWebDriver.switchFromDashboardIframeToIde();
+    seleniumWebDriverHelper.switchToIdeFrameAndWaitAvailability();
     ide.waitOpenedWorkspaceIsReadyToUse();
     consoles.waitPreviewUrlIsPresent();
 
     // Run the application
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     consoles.selectProcessInProcessConsoleTreeByName(RUN_PROCESS);
     consoles.clickOnPreviewUrl();
-    seleniumWebDriver.switchToNoneCurrentWindow(currentWindow);
+    seleniumWebDriverHelper.switchToNextWindow(currentWindow);
     checkAngularYeomanAppl();
     seleniumWebDriver.close();
     seleniumWebDriver.switchTo().window(currentWindow);
-    seleniumWebDriver.switchFromDashboardIframeToIde();
+    seleniumWebDriverHelper.switchToIdeFrameAndWaitAvailability();
 
     // Close terminal tab for 'run' process
     consoles.closeProcessInProcessConsoleTreeByName(RUN_PROCESS);

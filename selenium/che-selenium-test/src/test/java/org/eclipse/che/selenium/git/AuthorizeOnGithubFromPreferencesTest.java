@@ -19,6 +19,7 @@ import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestGitHubServiceClient;
 import org.eclipse.che.selenium.core.client.TestUserPreferencesServiceClient;
 import org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants;
+import org.eclipse.che.selenium.core.webdriver.SeleniumWebDriverHelper;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.AskDialog;
 import org.eclipse.che.selenium.pageobject.Events;
@@ -39,6 +40,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** @author Aleksandr Shmaraev */
+@Test(groups = TestGroup.GITHUB)
 public class AuthorizeOnGithubFromPreferencesTest {
   private static final String GITHUB_COM = "github.com";
   private static final Logger LOG =
@@ -65,6 +67,7 @@ public class AuthorizeOnGithubFromPreferencesTest {
   @Inject private ImportProjectFromLocation importProject;
   @Inject private Preferences preferences;
   @Inject private SeleniumWebDriver seleniumWebDriver;
+  @Inject private SeleniumWebDriverHelper seleniumWebDriverHelper;
   @Inject private AskDialog askDialog;
   @Inject private GitHub gitHub;
   @Inject private TestGitHubServiceClient gitHubClientService;
@@ -120,7 +123,7 @@ public class AuthorizeOnGithubFromPreferencesTest {
     askDialog.waitFormToOpen(25);
     askDialog.clickOkBtn();
     askDialog.waitFormToClose();
-    seleniumWebDriver.switchToNoneCurrentWindow(ideWin);
+    seleniumWebDriverHelper.switchToNextWindow(ideWin);
 
     gitHub.waitAuthorizationPageOpened();
     gitHub.typeLogin(gitHubUsername);

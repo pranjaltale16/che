@@ -13,6 +13,8 @@ import {CheWorkspace} from '../../../components/api/workspace/che-workspace.fact
 import IdeSvc from '../../../app/ide/ide.service';
 import {CheBranding} from '../../../components/branding/che-branding.factory';
 import {WorkspacesService} from '../../workspaces/workspaces.service';
+import {CheNotification} from '../../../components/notification/che-notification.factory';
+
 
 const MAX_RECENT_WORKSPACES_ITEMS: number = 5;
 
@@ -23,6 +25,9 @@ const MAX_RECENT_WORKSPACES_ITEMS: number = 5;
  * @author Oleksii Kurinnyi
  */
 export class NavbarRecentWorkspacesController {
+
+  static $inject = ['ideSvc', 'cheWorkspace', 'cheBranding', '$window', '$log', '$scope', '$rootScope', 'workspacesService', 'cheNotification'];
+
   cheWorkspace: CheWorkspace;
   dropdownItemTempl: Array<any>;
   workspaces: Array<che.IWorkspace>;
@@ -37,10 +42,11 @@ export class NavbarRecentWorkspacesController {
   dropdownItems: Object;
   workspaceCreationLink: string;
   workspacesService: WorkspacesService;
+  cheNotification: CheNotification;
+
 
   /**
    * Default constructor
-   * @ngInject for Dependency injection
    */
   constructor(ideSvc: IdeSvc,
               cheWorkspace: CheWorkspace,
@@ -49,7 +55,8 @@ export class NavbarRecentWorkspacesController {
               $log: ng.ILogService,
               $scope: ng.IScope,
               $rootScope: ng.IRootScopeService,
-              workspacesService: WorkspacesService) {
+              workspacesService: WorkspacesService,
+              cheNotification: CheNotification) {
     this.ideSvc = ideSvc;
     this.cheWorkspace = cheWorkspace;
     this.$log = $log;
@@ -57,6 +64,7 @@ export class NavbarRecentWorkspacesController {
     this.$rootScope = $rootScope;
     this.workspaceCreationLink = cheBranding.getWorkspace().creationLink;
     this.workspacesService = workspacesService;
+    this.cheNotification = cheNotification;
 
     // workspace updated time map by id
     this.workspaceUpdated = new Map();
@@ -310,6 +318,7 @@ export class NavbarRecentWorkspacesController {
       angular.noop();
     }, (error: any) => {
       this.$log.error(error);
+      this.cheNotification.showError('Stop workspace error.', error);
     });
   }
 
@@ -323,6 +332,7 @@ export class NavbarRecentWorkspacesController {
     this.updateRecentWorkspace(workspaceId);
     this.cheWorkspace.startWorkspace(workspace.id, workspace.config.defaultEnv).catch((error: any) => {
       this.$log.error(error);
+      this.cheNotification.showError('Run workspace error.', error);
     });
   }
 

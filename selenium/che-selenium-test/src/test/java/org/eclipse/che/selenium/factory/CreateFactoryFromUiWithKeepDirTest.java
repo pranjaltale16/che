@@ -14,9 +14,9 @@ import static org.eclipse.che.selenium.core.constant.TestGitConstants.CONFIGURIN
 import static org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants.Workspace.CREATE_FACTORY;
 import static org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants.Workspace.IMPORT_PROJECT;
 import static org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants.Workspace.WORKSPACE;
-import static org.eclipse.che.selenium.core.constant.TestProjectExplorerContextMenuConstants.CONVERT_TO_PROJECT;
+import static org.eclipse.che.selenium.core.constant.TestProjectExplorerContextMenuConstants.ContextMenuFirstLevelItems.CONVERT_TO_PROJECT;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.UPDATING_PROJECT_TIMEOUT_SEC;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.MarkersType.ERROR_MARKER;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.MarkerLocator.ERROR;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -27,7 +27,8 @@ import org.eclipse.che.selenium.core.SeleniumWebDriver;
 import org.eclipse.che.selenium.core.client.TestFactoryServiceClient;
 import org.eclipse.che.selenium.core.client.TestWorkspaceServiceClient;
 import org.eclipse.che.selenium.core.provider.TestIdeUrlProvider;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
+import org.eclipse.che.selenium.core.webdriver.SeleniumWebDriverHelper;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.CodenvyEditor;
 import org.eclipse.che.selenium.pageobject.CreateFactoryWidget;
@@ -63,7 +64,7 @@ public class CreateFactoryFromUiWithKeepDirTest {
   };
   private static final String FACTORY_NAME = NameGenerator.generate("keepFactory", 2);
 
-  @Inject private TestUser user;
+  @Inject private DefaultTestUser user;
   @Inject private CodenvyEditor editor;
   @Inject private TestWorkspace testWorkspace;
   @Inject private Ide ide;
@@ -78,6 +79,7 @@ public class CreateFactoryFromUiWithKeepDirTest {
   @Inject private Loader loader;
   @Inject private TestIdeUrlProvider ideUrlProvider;
   @Inject private SeleniumWebDriver seleniumWebDriver;
+  @Inject private SeleniumWebDriverHelper seleniumWebDriverHelper;
   @Inject private TestWorkspaceServiceClient workspaceServiceClient;
   @Inject private TestFactoryServiceClient factoryServiceClient;
   @Inject private PullRequestPanel pullRequestPanel;
@@ -131,16 +133,18 @@ public class CreateFactoryFromUiWithKeepDirTest {
     factoryWidget.clickOnCreateBtn();
     factoryWidget.waitTextIntoFactoryField(ideUrlProvider.get().toString());
     factoryWidget.clickOnInvokeBtn();
-    seleniumWebDriver.switchToNoneCurrentWindow(currentWin);
+    seleniumWebDriverHelper.switchToNextWindow(currentWin);
     loadingBehaviorPage.waitWhileLoadPageIsClosed();
-    seleniumWebDriver.switchFromDashboardIframeToIde();
+    seleniumWebDriverHelper.switchToIdeFrameAndWaitAvailability();
     try {
       projectExplorer.waitProjectExplorer(80);
     } catch (org.openqa.selenium.TimeoutException ex) {
       seleniumWebDriver.switchTo().defaultContent();
       projectExplorer.waitProjectExplorer(50);
     }
+
     events.clickEventLogBtn();
+
     try {
       events.waitExpectedMessage(CONFIGURING_PROJECT_AND_CLONING_SOURCE_CODE);
       events.waitExpectedMessage("Project " + PROJECT_NAME + " imported");
@@ -148,13 +152,14 @@ public class CreateFactoryFromUiWithKeepDirTest {
       // remove try-catch block after issue has been resolved
       fail("Known issue https://github.com/eclipse/che/issues/7253");
     }
-    projectExplorer.selectItem(PROJECT_NAME);
+
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     pullRequestPanel.waitOpenPanel();
     projectExplorer.expandPathInProjectExplorerAndOpenFile(
         PROJECT_NAME + "/" + KEEPED_DIR + "/src/main/java/hello", "GreetingController.java");
 
     mavenPluginStatusBar.waitClosingInfoPanel(UPDATING_PROJECT_TIMEOUT_SEC);
-    editor.waitAllMarkersDisappear(ERROR_MARKER);
+    editor.waitAllMarkersInvisibility(ERROR);
   }
 
   private void makeKeepDirectoryFromGitUrl(String url, String projectName, String folderName) {
@@ -187,7 +192,7 @@ public class CreateFactoryFromUiWithKeepDirTest {
     }
     editor.closeAutocomplete();
     editor.typeTextIntoEditor(" greeting =null;");
-    editor.waitAllMarkersDisappear(ERROR_MARKER);
+    editor.waitAllMarkersInvisibility(ERROR);
   }
 
   private void checkOpenDeclaration() throws IOException {

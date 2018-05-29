@@ -15,10 +15,11 @@ import {CheAgent} from '../../../../components/api/che-agent.factory';
 
 export interface IAgentItem extends che.IAgent {
   isEnabled: boolean;
+  isLatest: boolean;
 }
 
 /** List of the locked agents which shouldn't be switched by user */
-const LOCKED_AGENTS: Array<string> = ['org.eclipse.che.ws-agent', 'com.codenvy.rsync_in_machine', 'com.codenvy.external_rsync'];
+const LOCKED_AGENTS: Array<string> = ['com.codenvy.rsync_in_machine', 'com.codenvy.external_rsync'];
 const LATEST: string = 'latest';
 /**
  * @ngdoc controller
@@ -27,6 +28,9 @@ const LATEST: string = 'latest';
  * @author Oleksii Orel
  */
 export class MachineAgentsController {
+
+  static $inject = ['$scope', 'cheAgent'];
+
   onChange: Function;
   agentOrderBy = 'name';
   agentsList: Array<IAgentItem>;
@@ -36,10 +40,8 @@ export class MachineAgentsController {
   private environmentManager: EnvironmentManager;
   private agents: Array<string>;
 
-
   /**
    * Default constructor that is using resource
-   * @ngInject for Dependency injection
    */
   constructor($scope: ng.IScope, cheAgent: CheAgent) {
     this.cheAgent = cheAgent;
@@ -70,7 +72,7 @@ export class MachineAgentsController {
   buildAgentsList(): void {
     const agents = this.cheAgent.getAgents();
     this.agentsList = agents.map((agentItem: IAgentItem) => {
-      this.checkEnabled(agentItem);
+      this.checkAgentLatestVersion(agentItem);
       return agentItem;
     });
   }
@@ -122,13 +124,8 @@ export class MachineAgentsController {
         agentItem.isEnabled = true;
         return;
       } else if (agentItem.id === id && (!version || version === LATEST)) {
-        let latestAgent = this.cheAgent.getAgent(id);
-        if (latestAgent && latestAgent.version === agentItem.version) {
-          agentItem.isEnabled = true;
-          return;
-        } else if (!latestAgent) {
-          this.fetchAgentLatestVersion(agentItem);
-        }
+        agentItem.isEnabled = agentItem.isLatest;
+        return;
       }
     }
 
@@ -140,9 +137,16 @@ export class MachineAgentsController {
    *
    * @param {IAgentItem} agentItem agent to check on latest version
    */
-  private fetchAgentLatestVersion(agentItem: IAgentItem): void {
-    this.cheAgent.fetchAgent(agentItem.id).then((agent: che.IAgent) => {
-      agentItem.isEnabled = agentItem.version === agent.version;
-    });
+  private checkAgentLatestVersion(agentItem: IAgentItem): void {
+    let latestAgent = this.cheAgent.getAgent(agentItem.id);
+    if (latestAgent && latestAgent.version === agentItem.version) {
+      agentItem.isLatest = true;
+      this.checkEnabled(agentItem);
+    } else if (!latestAgent) {
+      this.cheAgent.fetchAgent(agentItem.id).then((agent: che.IAgent) => {
+        agentItem.isLatest = agentItem.version === agent.version;
+        this.checkEnabled(agentItem);
+      });
+    }
   }
 }

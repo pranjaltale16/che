@@ -13,6 +13,7 @@ package org.eclipse.che.selenium.pageobject.dashboard;
 import static java.lang.String.format;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.ELEMENT_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.REDRAW_UI_ELEMENTS_TIMEOUT_SEC;
+import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.WIDGET_TIMEOUT_SEC;
 import static org.openqa.selenium.support.ui.ExpectedConditions.elementToBeClickable;
 import static org.openqa.selenium.support.ui.ExpectedConditions.visibilityOf;
 import static org.openqa.selenium.support.ui.ExpectedConditions.visibilityOfElementLocated;
@@ -76,6 +77,8 @@ public class NewWorkspace {
     String WORKSPACE_CREATED_DIALOG = "//md-dialog/che-popup[@title='Workspace Is Created']";
     String EDIT_WORKSPACE_DIALOG_BUTTON = "//che-button-primary//span[text()='Edit']";
     String OPEN_IN_IDE_DIALOG_BUTTON = "//che-button-default//span[text()='Open In IDE']";
+    String ORGANIZATIONS_LIST_ID = "namespace-selector";
+    String ORGANIZATION_ITEM = "//md-menu-item[text()='%s']";
   }
 
   @FindBy(id = Locators.FILTERS_STACK_BUTTON)
@@ -195,7 +198,8 @@ public class NewWorkspace {
   }
 
   public void waitToolbar() {
-    new WebDriverWait(seleniumWebDriver, ELEMENT_TIMEOUT_SEC)
+    // we need increased timeout here to prevent error on Eclipse Che on OCP
+    new WebDriverWait(seleniumWebDriver, WIDGET_TIMEOUT_SEC)
         .until(visibilityOfElementLocated(By.id(Locators.TOOLBAR_TITLE_ID)));
   }
 
@@ -277,5 +281,19 @@ public class NewWorkspace {
     redrawUiElementsTimeout.until(visibilityOf(createWorkspaceButton)).click();
     waitWorkspaceIsCreatedDialogIsVisible();
     clickOnEditWorkspaceButton();
+  }
+
+  public void openOrganizationsList() {
+    new WebDriverWait(seleniumWebDriver, REDRAW_UI_ELEMENTS_TIMEOUT_SEC)
+        .until(visibilityOfElementLocated(By.id(Locators.ORGANIZATIONS_LIST_ID)))
+        .click();
+  }
+
+  public void selectOrganizationFromList(String organizationName) {
+    new WebDriverWait(seleniumWebDriver, REDRAW_UI_ELEMENTS_TIMEOUT_SEC)
+        .until(
+            visibilityOfElementLocated(
+                By.xpath(format(Locators.ORGANIZATION_ITEM, organizationName))))
+        .click();
   }
 }

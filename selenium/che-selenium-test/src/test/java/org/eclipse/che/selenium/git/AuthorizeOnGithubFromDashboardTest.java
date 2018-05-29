@@ -19,7 +19,8 @@ import org.eclipse.che.selenium.core.SeleniumWebDriver;
 import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestGitHubServiceClient;
 import org.eclipse.che.selenium.core.client.TestWorkspaceServiceClient;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
+import org.eclipse.che.selenium.core.webdriver.SeleniumWebDriverHelper;
 import org.eclipse.che.selenium.pageobject.ProjectExplorer;
 import org.eclipse.che.selenium.pageobject.dashboard.Dashboard;
 import org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace;
@@ -33,6 +34,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** @author Aleksandr Shmaraev */
+@Test(groups = TestGroup.GITHUB)
 public class AuthorizeOnGithubFromDashboardTest {
   private static final Logger LOG =
       LoggerFactory.getLogger(AuthorizeOnGithubFromDashboardTest.class);
@@ -51,11 +53,12 @@ public class AuthorizeOnGithubFromDashboardTest {
 
   @Inject private Dashboard dashboard;
   @Inject private Workspaces workspaces;
-  @Inject private TestUser defaultTestUser;
+  @Inject private DefaultTestUser defaultTestUser;
   @Inject private ProjectExplorer projectExplorer;
   @Inject private NewWorkspace newWorkspace;
   @Inject private ProjectSourcePage projectSourcePage;
   @Inject private SeleniumWebDriver seleniumWebDriver;
+  @Inject private SeleniumWebDriverHelper seleniumWebDriverHelper;
   @Inject private TestWorkspaceServiceClient workspaceServiceClient;
   @Inject private TestGitHubServiceClient gitHubClientService;
   @Inject private KeycloakFederatedIdentitiesPage keycloakFederatedIdentitiesPage;
@@ -94,7 +97,7 @@ public class AuthorizeOnGithubFromDashboardTest {
     projectSourcePage.clickOnConnectGithubAccountButton();
 
     // login to github
-    seleniumWebDriver.switchToNoneCurrentWindow(ideWin);
+    seleniumWebDriverHelper.switchToNextWindow(ideWin);
     projectSourcePage.waitAuthorizationPageOpened();
     projectSourcePage.typeLogin(gitHubUsername);
     projectSourcePage.typePassword(gitHubPassword);

@@ -1,8 +1,12 @@
 # Eclipse Che - Eclipse Next-Generation IDE
 [![Eclipse License](https://img.shields.io/badge/license-Eclipse-brightgreen.svg)](https://github.com/codenvy/che/blob/master/LICENSE)
 [![Build Status](https://ci.codenvycorp.com/buildStatus/icon?job=che-master-ci)](https://ci.codenvycorp.com/job/che-master-ci)
+<a href="https://sonarcloud.io/dashboard?id=org.eclipse.che%3Ache-parent%3Amaster">
+<img src="https://sonarcloud.io/images/project_badges/sonarcloud-black.svg" width="94" height="20" href="" />
+</a>
 
-https://www.eclipse.org/che/. Next-generation Eclipse platform, developer workspace server and cloud IDE. Che defines workspaces that include their dependencies including embedded containerized runtimes, Web IDE, and project code. This makes workspaces distributed, collaborative, and portable to run anywhere on a desktop or a server ... [Read More](https://www.eclipse.org/che/features/)
+
+https://www.eclipse.org/che/. Next-generation Eclipse platform, developer workspace server and cloud IDE. Che is focused on container-native development. It defines workspaces that include their dependencies including embedded containerized runtimes, a web IDE, and project code. This makes workspaces distributed, collaborative, and portable to run anywhere on a desktop or a server ... [Read More](https://www.eclipse.org/che/features/)
 
 ![Eclipse Che](https://www.eclipse.org/che/images/hero-technology-v2@2x.png "Eclipse Che")
 
@@ -33,3 +37,6 @@ If you are interested in fixing issues and contributing directly to the code bas
 
 ### License
 Che is open sourced under the Eclipse Public License 1.0.
+
+### Roadmap and Community Meetings
+We publish the [Che roadmap](https://github.com/eclipse/che/wiki/Roadmap) in the open and welcome anyone to join our [community meetings](https://github.com/eclipse/che/wiki/Che-Dev-Meetings). We love to hear from users and developers!

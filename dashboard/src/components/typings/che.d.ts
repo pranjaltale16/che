@@ -165,6 +165,7 @@ declare namespace che {
       DOCKERFILE: string;
       DOCKERIMAGE: string;
       COMPOSE: string;
+      KUBERNETES: string;
       OPENSHIFT: string;
       getValues(): Array<string>;
     }
@@ -238,7 +239,7 @@ declare namespace che {
   export interface IRegisterService {
     app: ng.IModule;
     directive(name: string, constructorFn: Function);
-    filter(name: string, constructorFn: Function): IRegisterService;
+    filter(name: string, constructorFn: any): IRegisterService;
     controller(name: string, constructorFn: Function): IRegisterService;
     service(name: string, constructorFn: Function): IRegisterService;
     provider(name: string, constructorFn: ng.IServiceProvider): IRegisterService;
@@ -358,6 +359,7 @@ declare namespace che {
     };
     owner: string;
     warnings: IWorkspaceWarning[];
+    machineToken?: string;
   }
 
   export interface IWorkspaceWarning {

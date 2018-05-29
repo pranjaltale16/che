@@ -33,10 +33,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +42,6 @@ import org.eclipse.che.api.workspace.server.model.impl.RuntimeIdentityImpl;
 import org.eclipse.che.api.workspace.server.model.impl.VolumeImpl;
 import org.eclipse.che.api.workspace.server.spi.InfrastructureException;
 import org.eclipse.che.api.workspace.server.spi.environment.InternalMachineConfig;
-import org.eclipse.che.workspace.infrastructure.kubernetes.KubernetesClientFactory;
 import org.eclipse.che.workspace.infrastructure.kubernetes.environment.KubernetesEnvironment;
 import org.eclipse.che.workspace.infrastructure.kubernetes.namespace.KubernetesNamespace;
 import org.eclipse.che.workspace.infrastructure.kubernetes.namespace.KubernetesNamespaceFactory;
@@ -66,7 +61,6 @@ import org.testng.annotations.Test;
 public class UniqueWorkspacePVCStrategyTest {
 
   private static final String WORKSPACE_ID = "workspace123";
-  private static final String NAMESPACE_NAME = "che";
   private static final String PVC_NAME_PREFIX = "che-claim";
   private static final String POD_NAME = "main";
   private static final String POD_NAME_2 = "second";
@@ -82,11 +76,9 @@ public class UniqueWorkspacePVCStrategyTest {
   private static final String VOLUME_2_NAME = "vol2";
 
   private static final RuntimeIdentity IDENTITY =
-      new RuntimeIdentityImpl(WORKSPACE_ID, "env1", "usr1");
+      new RuntimeIdentityImpl(WORKSPACE_ID, "env1", "id1");
 
   @Mock private KubernetesEnvironment k8sEnv;
-  @Mock private KubernetesClientFactory clientFactory;
-  @Mock private KubernetesClient client;
   @Mock private KubernetesNamespaceFactory factory;
   @Mock private KubernetesNamespace k8sNamespace;
   @Mock private KubernetesPersistentVolumeClaims pvcs;
@@ -103,9 +95,7 @@ public class UniqueWorkspacePVCStrategyTest {
   @BeforeMethod
   public void setup() throws Exception {
     strategy =
-        new UniqueWorkspacePVCStrategy(
-            NAMESPACE_NAME, PVC_NAME_PREFIX, PVC_QUANTITY, PVC_ACCESS_MODE, factory, clientFactory);
-    when(clientFactory.create()).thenReturn(client);
+        new UniqueWorkspacePVCStrategy(PVC_NAME_PREFIX, PVC_QUANTITY, PVC_ACCESS_MODE, factory);
 
     Map<String, InternalMachineConfig> machines = new HashMap<>();
     InternalMachineConfig machine1 = mock(InternalMachineConfig.class);
@@ -237,32 +227,9 @@ public class UniqueWorkspacePVCStrategyTest {
 
   @Test
   public void testRemovesPVCWhenCleanupCalled() throws Exception {
-    final MixedOperation mixedOperation = mock(MixedOperation.class);
-    final NonNamespaceOperation namespace = mock(NonNamespaceOperation.class);
-    final FilterWatchListDeletable filterList = mock(FilterWatchListDeletable.class);
-    doReturn(mixedOperation).when(client).persistentVolumeClaims();
-    doReturn(namespace).when(mixedOperation).inNamespace(NAMESPACE_NAME);
-    doReturn(filterList).when(namespace).withLabel(CHE_WORKSPACE_ID_LABEL, WORKSPACE_ID);
-    when(filterList.delete()).thenReturn(true);
-
     strategy.cleanup(WORKSPACE_ID);
 
-    verify(filterList).delete();
-  }
-
-  @Test
-  public void testDoNothingWhenNoPVCFoundInNamespaceOnCleanup() throws Exception {
-    final MixedOperation mixedOperation = mock(MixedOperation.class);
-    final NonNamespaceOperation namespace = mock(NonNamespaceOperation.class);
-    final FilterWatchListDeletable filterList = mock(FilterWatchListDeletable.class);
-    doReturn(mixedOperation).when(client).persistentVolumeClaims();
-    doReturn(namespace).when(mixedOperation).inNamespace(NAMESPACE_NAME);
-    doReturn(filterList).when(namespace).withLabel(CHE_WORKSPACE_ID_LABEL, WORKSPACE_ID);
-    when(filterList.delete()).thenReturn(false);
-
-    strategy.cleanup(WORKSPACE_ID);
-
-    verify(filterList).delete();
+    verify(pvcs).delete(ImmutableMap.of(CHE_WORKSPACE_ID_LABEL, WORKSPACE_ID));
   }
 
   private static PersistentVolumeClaim mockPVC(Map<String, String> labels, String name) {

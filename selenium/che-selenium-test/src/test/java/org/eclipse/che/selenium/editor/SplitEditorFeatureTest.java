@@ -11,12 +11,12 @@
 package org.eclipse.che.selenium.editor;
 
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.LOAD_PAGE_TIMEOUT_SEC;
-import static org.eclipse.che.selenium.pageobject.CodenvyEditor.TabAction;
+import static org.eclipse.che.selenium.pageobject.CodenvyEditor.TabActionLocator;
 
 import com.google.inject.Inject;
 import org.eclipse.che.commons.lang.NameGenerator;
 import org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.AskForValueDialog;
 import org.eclipse.che.selenium.pageobject.CodenvyEditor;
@@ -47,7 +47,7 @@ public class SplitEditorFeatureTest {
   private static final String TEXT = "some text";
 
   @Inject private TestWorkspace workspace;
-  @Inject private TestUser defaultTestUser;
+  @Inject private DefaultTestUser defaultTestUser;
   @Inject private Ide ide;
   @Inject private ProjectExplorer projectExplorer;
   @Inject private Loader loader;
@@ -61,7 +61,7 @@ public class SplitEditorFeatureTest {
   public void setUp() throws Exception {
     ide.open(workspace);
     createProject(PROJECT_NAME);
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     projectExplorer.quickExpandWithJavaScript();
     projectExplorer.openItemByPath(PATH_JAVA_FILE);
     loader.waitOnClosed();
@@ -70,13 +70,13 @@ public class SplitEditorFeatureTest {
   @Test
   public void checkSplitEditorWindow() {
     editor.waitActive();
-    editor.openContextMenuForTabByName(NAME_JAVA_CLASS);
-    editor.runActionForTabFromContextMenu(TabAction.SPIT_HORISONTALLY);
+    editor.openAndWaitContextMenuForTabByName(NAME_JAVA_CLASS);
+    editor.runActionForTabFromContextMenu(TabActionLocator.SPIT_HORISONTALLY);
 
     editor.waitCountTabsWithProvidedName(2, NAME_JAVA_CLASS);
 
     editor.selectTabByIndexEditorWindowAndOpenMenu(0, NAME_JAVA_CLASS);
-    editor.runActionForTabFromContextMenu(TabAction.SPLIT_VERTICALLY);
+    editor.runActionForTabFromContextMenu(TabActionLocator.SPLIT_VERTICALLY);
     editor.waitCountTabsWithProvidedName(3, NAME_JAVA_CLASS);
 
     editor.selectTabByIndexEditorWindow(1, NAME_JAVA_CLASS);
@@ -103,7 +103,7 @@ public class SplitEditorFeatureTest {
   public void checkRefactoring() {
     editor.selectTabByIndexEditorWindow(2, NAME_JAVA_CLASS);
     editor.waitActive();
-    projectExplorer.selectItem(PATH_JAVA_FILE);
+    projectExplorer.waitAndSelectItem(PATH_JAVA_FILE);
 
     projectExplorer.launchRefactorByKeyboard();
     refactor.typeAndWaitNewName(NEW_NAME_JAVA);
@@ -163,7 +163,7 @@ public class SplitEditorFeatureTest {
   }
 
   private void renameFile(String pathToFile) {
-    projectExplorer.selectItem(pathToFile);
+    projectExplorer.waitAndSelectItem(pathToFile);
     menu.runCommand(TestMenuCommandsConstants.Edit.EDIT, TestMenuCommandsConstants.Edit.RENAME);
     askForValueDialog.waitFormToOpen();
     askForValueDialog.clearInput();

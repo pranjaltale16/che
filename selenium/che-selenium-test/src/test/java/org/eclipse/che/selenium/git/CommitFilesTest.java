@@ -14,12 +14,13 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.net.URL;
 import java.nio.file.Paths;
+import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestProjectServiceClient;
 import org.eclipse.che.selenium.core.client.TestUserPreferencesServiceClient;
 import org.eclipse.che.selenium.core.constant.TestGitConstants;
 import org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants;
 import org.eclipse.che.selenium.core.project.ProjectTemplates;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.AskDialog;
 import org.eclipse.che.selenium.pageobject.AskForValueDialog;
@@ -39,6 +40,7 @@ import org.testng.annotations.Test;
  * @author aleksandr shmaraev
  * @author igor vinokur
  */
+@Test(groups = TestGroup.GITHUB)
 public class CommitFilesTest {
   private static final String PROJECT_NAME = CommitFilesTest.class.getSimpleName();
   private static final String NEW_NAME_PACKAGE = "org.eclipse.dev.examples";
@@ -61,7 +63,7 @@ public class CommitFilesTest {
 
   @Inject private TestWorkspace ws;
   @Inject private Ide ide;
-  @Inject private TestUser productUser;
+  @Inject private DefaultTestUser productUser;
 
   @Inject
   @Named("github.username")
@@ -99,7 +101,7 @@ public class CommitFilesTest {
   public void testCheckBoxSelections() {
     projectExplorer.waitProjectExplorer();
     projectExplorer.waitItem(PROJECT_NAME);
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(
         TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.INITIALIZE_REPOSITORY);
     askDialog.waitFormToOpen();
@@ -108,7 +110,7 @@ public class CommitFilesTest {
     git.waitGitStatusBarWithMess(TestGitConstants.GIT_INITIALIZED_SUCCESS);
 
     // unselect folder and check that all child nodes are also unselected
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.clickItemCheckBoxInCommitWindow("webapp");
     git.waitItemCheckBoxToBeIndeterminateInCommitWindow("src/main");
@@ -155,7 +157,7 @@ public class CommitFilesTest {
   @Test(priority = 1)
   public void testFoldersStructureAfterRename() {
     projectExplorer.expandPathInProjectExplorer(PROJECT_NAME + "/src/main/java/");
-    projectExplorer.selectItem(PROJECT_NAME + "/src/main/java/org/eclipse/qa/examples");
+    projectExplorer.waitAndSelectItem(PROJECT_NAME + "/src/main/java/org/eclipse/qa/examples");
     menu.runCommand(
         TestMenuCommandsConstants.Assistant.ASSISTANT,
         TestMenuCommandsConstants.Assistant.Refactoring.REFACTORING,
@@ -167,7 +169,7 @@ public class CommitFilesTest {
     refactor.clickOkButtonRefactorForm();
 
     projectExplorer.waitItem(PROJECT_NAME + "/src/main/java/org/eclipse/dev/examples");
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.waitCommitMainFormIsOpened();
 
@@ -191,7 +193,7 @@ public class CommitFilesTest {
   @Test(priority = 2)
   public void commitFilesTest() {
     // perform init commit without one folder
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.clickItemCheckBoxInCommitWindow("java/org/eclipse/dev/examples");
     git.waitAndRunCommit("init");
@@ -205,7 +207,7 @@ public class CommitFilesTest {
     loader.waitOnClosed();
 
     // perform commit of the folder
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.waitAndRunCommit("init");
     loader.waitOnClosed();
@@ -242,7 +244,7 @@ public class CommitFilesTest {
     editor.waitWhileFileIsClosed("index.jsp");
 
     // Create Hello.java class
-    projectExplorer.selectItem(PROJECT_NAME + "/src/main/java/org/eclipse/dev/examples");
+    projectExplorer.waitAndSelectItem(PROJECT_NAME + "/src/main/java/org/eclipse/dev/examples");
     menu.runCommand(
         TestMenuCommandsConstants.Project.PROJECT,
         TestMenuCommandsConstants.Project.New.NEW,
@@ -252,14 +254,14 @@ public class CommitFilesTest {
     askForValueDialog.clickOkBtnNewJavaClass();
     askForValueDialog.waitNewJavaClassClose();
     loader.waitOnClosed();
-    projectExplorer.waitItemInVisibleArea("Hello.java");
+    projectExplorer.waitVisibilityByName("Hello.java");
     editor.waitTabIsPresent("Hello");
     loader.waitOnClosed();
     editor.closeFileByNameWithSaving("Hello");
     editor.waitWhileFileIsClosed("Hello");
 
     // Create script.js file
-    projectExplorer.selectItem(PROJECT_NAME + "/src/main/webapp");
+    projectExplorer.waitAndSelectItem(PROJECT_NAME + "/src/main/webapp");
     menu.runCommand(
         TestMenuCommandsConstants.Project.PROJECT,
         TestMenuCommandsConstants.Project.New.NEW,
@@ -271,7 +273,7 @@ public class CommitFilesTest {
     askForValueDialog.waitFormToClose();
 
     // Commit to repository and check status
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.waitAndRunCommit(COMMIT_MESSAGE);
     git.waitGitStatusBarWithMess(TestGitConstants.COMMIT_MESSAGE_SUCCESS);
@@ -281,7 +283,7 @@ public class CommitFilesTest {
     git.waitGitStatusBarWithMess(NOTHING_TO_COMMIT_MESSAGE);
 
     // View git history
-    projectExplorer.selectItem(PROJECT_NAME + "/src/main");
+    projectExplorer.waitAndSelectItem(PROJECT_NAME + "/src/main");
     menu.runCommand(TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.SHOW_HISTORY);
     loader.waitOnClosed();
     git.waitTextInHistoryForm(COMMIT_MESSAGE);

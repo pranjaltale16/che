@@ -10,6 +10,7 @@
  */
 package org.eclipse.che.selenium.dashboard;
 
+import static org.eclipse.che.commons.lang.NameGenerator.generate;
 import static org.eclipse.che.selenium.core.constant.TestStacksConstants.JAVA_MYSQL;
 import static org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceDetails.StateWorkspace.STOPPED;
 import static org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceDetails.TabNames.ENV_VARIABLES;
@@ -18,31 +19,30 @@ import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import org.eclipse.che.commons.lang.NameGenerator;
-import org.eclipse.che.selenium.core.SeleniumWebDriver;
 import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestWorkspaceServiceClient;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.eclipse.che.selenium.core.utils.WaitUtils;
+import org.eclipse.che.selenium.core.webdriver.SeleniumWebDriverHelper;
 import org.eclipse.che.selenium.pageobject.Consoles;
 import org.eclipse.che.selenium.pageobject.Ide;
 import org.eclipse.che.selenium.pageobject.Loader;
-import org.eclipse.che.selenium.pageobject.ProjectExplorer;
+import org.eclipse.che.selenium.pageobject.ToastLoader;
 import org.eclipse.che.selenium.pageobject.dashboard.Dashboard;
 import org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace;
 import org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceDetails;
 import org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceEnvVariables;
 import org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceMachines;
 import org.eclipse.che.selenium.pageobject.dashboard.workspaces.Workspaces;
-import org.eclipse.che.selenium.pageobject.machineperspective.MachineTerminal;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** @author Skoryk Serhii */
-@Test(groups = {TestGroup.DOCKER})
+@Test(groups = {TestGroup.DOCKER, TestGroup.OSIO})
 public class WorkspaceDetailsComposeTest {
-  private static final String WORKSPACE = NameGenerator.generate("java-mysql", 4);
+
+  private static final String WORKSPACE = generate("java-mysql", 4);
   private static final ImmutableMap<String, String> EXPECTED_VARIABLES =
       ImmutableMap.of(
           "MYSQL_DATABASE", "petclinic",
@@ -50,20 +50,19 @@ public class WorkspaceDetailsComposeTest {
           "MYSQL_ROOT_PASSWORD", "password",
           "MYSQL_USER", "petclinic");
 
-  @Inject private TestUser testUser;
-  @Inject private ProjectExplorer projectExplorer;
+  @Inject private DefaultTestUser testUser;
   @Inject private Loader loader;
   @Inject private NewWorkspace newWorkspace;
   @Inject private Dashboard dashboard;
   @Inject private WorkspaceDetails workspaceDetails;
-  @Inject private SeleniumWebDriver seleniumWebDriver;
+  @Inject private SeleniumWebDriverHelper seleniumWebDriverHelper;
   @Inject private TestWorkspaceServiceClient workspaceServiceClient;
   @Inject private Consoles consoles;
   @Inject private Workspaces workspaces;
   @Inject private WorkspaceMachines workspaceMachines;
   @Inject private WorkspaceEnvVariables workspaceEnvVariables;
-  @Inject private MachineTerminal terminal;
   @Inject private Ide ide;
+  @Inject private ToastLoader toastLoader;
 
   @BeforeClass
   public void setUp() throws Exception {
@@ -151,8 +150,8 @@ public class WorkspaceDetailsComposeTest {
   public void startWorkspaceAndCheckChanges() {
     // check that created machine exists in the Process Console tree
     workspaceDetails.clickOpenInIdeWsBtn();
-    seleniumWebDriver.switchFromDashboardIframeToIde();
-
+    seleniumWebDriverHelper.switchToIdeFrameAndWaitAvailability();
+    toastLoader.waitToastLoaderAndClickStartButton();
     ide.waitOpenedWorkspaceIsReadyToUse();
     consoles.waitProcessInProcessConsoleTree("machine");
     consoles.waitTabNameProcessIsPresent("machine");

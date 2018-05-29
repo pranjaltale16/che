@@ -10,6 +10,7 @@
  */
 package org.eclipse.che.selenium.dashboard;
 
+import static org.eclipse.che.commons.lang.NameGenerator.generate;
 import static org.eclipse.che.selenium.core.project.ProjectTemplates.MAVEN_SPRING;
 import static org.eclipse.che.selenium.pageobject.dashboard.ProjectSourcePage.Template.CONSOLE_JAVA_SIMPLE;
 import static org.eclipse.che.selenium.pageobject.dashboard.ProjectSourcePage.Template.WEB_JAVA_SPRING;
@@ -19,6 +20,8 @@ import static org.eclipse.che.selenium.pageobject.dashboard.workspaces.Workspace
 import static org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceDetails.TabNames.OVERVIEW;
 import static org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceDetails.TabNames.PROJECTS;
 import static org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceDetails.TabNames.SERVERS;
+import static org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceDetails.TabNames.SSH;
+import static org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceDetails.TabNames.VOLUMES;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -26,10 +29,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.net.URL;
 import java.nio.file.Paths;
-import org.eclipse.che.commons.lang.NameGenerator;
+import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestProjectServiceClient;
 import org.eclipse.che.selenium.core.client.TestWorkspaceServiceClient;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.eclipse.che.selenium.core.utils.WaitUtils;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.Loader;
@@ -41,18 +44,22 @@ import org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceMachine
 import org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceOverview;
 import org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceProjects;
 import org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceServers;
+import org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspaceSsh;
 import org.eclipse.che.selenium.pageobject.dashboard.workspaces.Workspaces;
+import org.eclipse.che.selenium.pageobject.dashboard.workspaces.WorkspacesVolumes;
+import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** @author Skoryk Serhii */
+@Test(groups = TestGroup.OSIO)
 public class WorkspaceDetailsSingleMachineTest {
-  private static final String PROJECT_NAME = NameGenerator.generate("project", 4);
+  private static final String PROJECT_NAME = generate("project", 4);
   private static final ImmutableMap<String, Boolean> EXPECTED_INSTALLERS =
       ImmutableMap.<String, Boolean>builder()
           .put("C# language server", false)
-          .put("Exec", false)
+          .put("Exec", true)
           .put("File sync", false)
           .put("Git credentials", false)
           .put("JSON language server", false)
@@ -68,7 +75,7 @@ public class WorkspaceDetailsSingleMachineTest {
 
   private String workspaceName;
 
-  @Inject private TestUser testUser;
+  @Inject private DefaultTestUser testUser;
   @Inject private Loader loader;
   @Inject private Dashboard dashboard;
   @Inject private WorkspaceDetails workspaceDetails;
@@ -82,6 +89,8 @@ public class WorkspaceDetailsSingleMachineTest {
   @Inject private WorkspaceOverview workspaceOverview;
   @Inject private TestWorkspace testWorkspace;
   @Inject private TestProjectServiceClient testProjectServiceClient;
+  @Inject private WorkspaceSsh workspaceSsh;
+  @Inject private WorkspacesVolumes workspacesVolumes;
 
   @BeforeClass
   public void setUp() throws Exception {
@@ -122,7 +131,6 @@ public class WorkspaceDetailsSingleMachineTest {
   @Test
   public void checkWorkingWithInstallers() {
     workspaceDetails.selectTabInWorkspaceMenu(INSTALLERS);
-    assertTrue(workspaceInstallers.isInstallerStateNotChangeable("Workspace API"));
 
     // check all needed installers in dev-machine exist
     workspaceMachines.selectMachine("Workspace Installers", "dev-machine");
@@ -198,6 +206,56 @@ public class WorkspaceDetailsSingleMachineTest {
     // check that project exists(workspace will restart)
     workspaceProjects.waitProjectIsPresent(WEB_JAVA_SPRING);
     workspaceProjects.waitProjectIsPresent(CONSOLE_JAVA_SIMPLE);
+  }
+
+  @Test
+  public void checkSshTab() {
+    workspaceDetails.selectTabInWorkspaceMenu(SSH);
+
+    // check ssh key exist
+    Assert.assertTrue(workspaceSsh.isPrivateKeyExists());
+    Assert.assertTrue(workspaceSsh.isPublicKeyExists());
+
+    // remove ssh key
+    workspaceSsh.clickOnRemoveDefaultSshKeyButton();
+    workspaceSsh.waitSshKeyNotExists();
+
+    // generate ssh key
+    workspaceSsh.clickOnGenerateButton();
+    Assert.assertTrue(workspaceSsh.isPrivateKeyExists());
+    Assert.assertTrue(workspaceSsh.isPublicKeyExists());
+  }
+
+  @Test
+  public void checkVolumesTab() {
+    String volumeName = "prj";
+    String volumePath = "/" + volumeName;
+    String renamedVolumeName = "project";
+    String renamedVolumePath = "/" + renamedVolumeName;
+
+    workspaceDetails.selectTabInWorkspaceMenu(VOLUMES);
+
+    // create volume
+    workspacesVolumes.clickOnAddVolumeButton();
+    workspacesVolumes.enterVolumeName(volumeName);
+    workspacesVolumes.enterVolumePath(volumePath);
+    workspaceDetails.clickOnAddButtonInDialogWindow();
+    assertTrue(workspacesVolumes.checkVolumeExists(volumeName, volumePath));
+    clickOnSaveButton();
+
+    // edit volume
+    workspacesVolumes.clickOnEditVolumeButton(volumeName);
+    workspacesVolumes.enterVolumeName(renamedVolumeName);
+    workspacesVolumes.enterVolumePath(renamedVolumePath);
+    workspaceDetails.clickOnUpdateButtonInDialogWindow();
+    assertTrue(workspacesVolumes.checkVolumeExists(renamedVolumeName, renamedVolumePath));
+    clickOnSaveButton();
+
+    // remove volume
+    workspacesVolumes.clickOnRemoveVolumeButton(renamedVolumeName);
+    workspaceDetails.clickOnDeleteButtonInDialogWindow();
+    workspacesVolumes.waitVolumeNotExists(renamedVolumeName);
+    clickOnSaveButton();
   }
 
   private void addNewProject(String projectName) {

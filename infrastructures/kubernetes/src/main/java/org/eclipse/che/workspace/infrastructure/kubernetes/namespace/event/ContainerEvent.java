@@ -21,14 +21,24 @@ import java.util.Objects;
 public class ContainerEvent {
   private final String podName;
   private final String containerName;
+  private final String reason;
   private final String message;
-  private final String time;
+  private final String creationTimestamp;
+  private final String lastTimestamp;
 
-  public ContainerEvent(String podName, String containerName, String message, String time) {
+  public ContainerEvent(
+      String podName,
+      String containerName,
+      String reason,
+      String message,
+      String creationTimestamp,
+      String lastTimestamp) {
     this.podName = podName;
     this.containerName = containerName;
+    this.reason = reason;
     this.message = message;
-    this.time = time;
+    this.creationTimestamp = creationTimestamp;
+    this.lastTimestamp = lastTimestamp;
   }
 
   /** Returns name of pod related to container. */
@@ -41,14 +51,24 @@ public class ContainerEvent {
     return containerName;
   }
 
+  /** Returns the reason of the event. */
+  public String getReason() {
+    return reason;
+  }
+
   /** Returns the contents of the event. */
   public String getMessage() {
     return message;
   }
 
-  /** Returns time in format '2017-06-27T17:11:09.306+03:00' */
-  public String getTime() {
-    return time;
+  /** Returns creation timestamp in format '2018-05-15T16:17:54Z' */
+  public String getCreationTimeStamp() {
+    return creationTimestamp;
+  }
+
+  /** Returns last timestamp in format '2018-05-15T16:17:54Z' */
+  public String getLastTimestamp() {
+    return lastTimestamp;
   }
 
   @Override
@@ -62,13 +82,15 @@ public class ContainerEvent {
     ContainerEvent that = (ContainerEvent) o;
     return Objects.equals(podName, that.podName)
         && Objects.equals(containerName, that.containerName)
+        && Objects.equals(reason, that.reason)
         && Objects.equals(message, that.message)
-        && Objects.equals(time, that.time);
+        && Objects.equals(creationTimestamp, that.creationTimestamp)
+        && Objects.equals(lastTimestamp, that.lastTimestamp);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(podName, containerName, message, time);
+    return Objects.hash(podName, containerName, reason, message, creationTimestamp, lastTimestamp);
   }
 
   @Override
@@ -80,11 +102,17 @@ public class ContainerEvent {
         + ", containerName='"
         + containerName
         + '\''
+        + ", reason='"
+        + reason
+        + '\''
         + ", message='"
         + message
         + '\''
-        + ", time='"
-        + time
+        + ", creationTimestamp='"
+        + creationTimestamp
+        + '\''
+        + ", lastTimestamp='"
+        + lastTimestamp
         + '\''
         + '}';
   }

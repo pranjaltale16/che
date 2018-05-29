@@ -10,6 +10,7 @@
  */
 package org.eclipse.che.selenium.pageobject.dashboard.workspaces;
 
+import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.ELEMENT_TIMEOUT_SEC;
 import static org.eclipse.che.selenium.core.constant.TestTimeoutsConstants.REDRAW_UI_ELEMENTS_TIMEOUT_SEC;
 import static org.openqa.selenium.support.ui.ExpectedConditions.invisibilityOfElementLocated;
 import static org.openqa.selenium.support.ui.ExpectedConditions.visibilityOfElementLocated;
@@ -79,18 +80,14 @@ public class WorkspaceProjects {
             visibilityOfElementLocated(
                 By.xpath(String.format(Locators.PROJECT_BY_NAME, projectName))))
         .click();
+    waitProjectDetailsPage();
   }
 
   /** click on 'DELETE' button in settings of project */
   public void clickOnDeleteProject() {
-    try {
-      new WebDriverWait(seleniumWebDriver, REDRAW_UI_ELEMENTS_TIMEOUT_SEC)
-          .until(visibilityOfElementLocated(By.xpath(Locators.DELETE_PROJECT)))
-          .click();
-    } catch (TimeoutException ex) {
-      // remove try-catch block after issue has been resolved
-      fail("Known issue https://github.com/eclipse/che/issues/8792");
-    }
+    new WebDriverWait(seleniumWebDriver, REDRAW_UI_ELEMENTS_TIMEOUT_SEC)
+        .until(visibilityOfElementLocated(By.xpath(Locators.DELETE_PROJECT)))
+        .click();
   }
 
   /** click on 'DELETE IT!' button in the confirming window */
@@ -120,5 +117,15 @@ public class WorkspaceProjects {
             visibilityOfElementLocated(
                 By.xpath(String.format(Locators.PROJECT_CHECKBOX, projectName))))
         .click();
+  }
+
+  public void waitProjectDetailsPage() {
+    try {
+      new WebDriverWait(seleniumWebDriver, ELEMENT_TIMEOUT_SEC)
+          .until(visibilityOfElementLocated(By.xpath(Locators.DELETE_PROJECT)));
+    } catch (TimeoutException ex) {
+      // remove try-catch block after issue has been resolved
+      fail("Known issue https://github.com/eclipse/che/issues/8931");
+    }
   }
 }

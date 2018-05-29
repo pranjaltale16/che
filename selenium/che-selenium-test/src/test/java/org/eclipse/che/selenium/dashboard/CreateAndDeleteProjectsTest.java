@@ -10,6 +10,7 @@
  */
 package org.eclipse.che.selenium.dashboard;
 
+import static org.eclipse.che.commons.lang.NameGenerator.generate;
 import static org.eclipse.che.selenium.pageobject.ProjectExplorer.FolderTypes.PROJECT_FOLDER;
 import static org.eclipse.che.selenium.pageobject.dashboard.ProjectSourcePage.Template.CONSOLE_JAVA_SIMPLE;
 import static org.eclipse.che.selenium.pageobject.dashboard.ProjectSourcePage.Template.WEB_JAVA_SPRING;
@@ -17,15 +18,17 @@ import static org.eclipse.che.selenium.pageobject.dashboard.workspaces.Workspace
 
 import com.google.inject.Inject;
 import java.util.concurrent.ExecutionException;
-import org.eclipse.che.commons.lang.NameGenerator;
 import org.eclipse.che.selenium.core.SeleniumWebDriver;
+import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestWorkspaceServiceClient;
 import org.eclipse.che.selenium.core.constant.TestStacksConstants;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
+import org.eclipse.che.selenium.core.webdriver.SeleniumWebDriverHelper;
 import org.eclipse.che.selenium.pageobject.Ide;
 import org.eclipse.che.selenium.pageobject.MavenPluginStatusBar;
 import org.eclipse.che.selenium.pageobject.NotificationsPopupPanel;
 import org.eclipse.che.selenium.pageobject.ProjectExplorer;
+import org.eclipse.che.selenium.pageobject.ToastLoader;
 import org.eclipse.che.selenium.pageobject.dashboard.Dashboard;
 import org.eclipse.che.selenium.pageobject.dashboard.NavigationBar;
 import org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace;
@@ -38,9 +41,10 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** @author Andrey Chizhikov */
+@Test(groups = TestGroup.OSIO)
 public class CreateAndDeleteProjectsTest {
 
-  private final String WORKSPACE = NameGenerator.generate("workspace", 4);
+  private final String WORKSPACE = generate("workspace", 4);
 
   @Inject private Dashboard dashboard;
   @Inject private WorkspaceProjects workspaceProjects;
@@ -50,12 +54,14 @@ public class CreateAndDeleteProjectsTest {
   @Inject private ProjectSourcePage projectSourcePage;
   @Inject private ProjectExplorer explorer;
   @Inject private SeleniumWebDriver seleniumWebDriver;
+  @Inject private SeleniumWebDriverHelper seleniumWebDriverHelper;
   @Inject private TestWorkspaceServiceClient workspaceServiceClient;
-  @Inject private TestUser defaultTestUser;
+  @Inject private DefaultTestUser defaultTestUser;
   @Inject private NotificationsPopupPanel notificationsPopupPanel;
   @Inject private MavenPluginStatusBar mavenPluginStatusBar;
   @Inject private Workspaces workspaces;
   @Inject private Ide ide;
+  @Inject private ToastLoader toastLoader;
 
   @BeforeClass
   public void setUp() {
@@ -74,6 +80,8 @@ public class CreateAndDeleteProjectsTest {
     workspaces.clickOnAddWorkspaceBtn();
     newWorkspace.waitToolbar();
 
+    // we are selecting 'Java' stack from the 'All Stack' tab for compatibility with OSIO
+    newWorkspace.clickOnAllStacksTab();
     newWorkspace.selectStack(TestStacksConstants.JAVA.getId());
     newWorkspace.typeWorkspaceName(WORKSPACE);
     projectSourcePage.clickOnAddOrImportProjectButton();
@@ -82,15 +90,15 @@ public class CreateAndDeleteProjectsTest {
     projectSourcePage.clickOnAddProjectButton();
     newWorkspace.clickOnCreateButtonAndOpenInIDE();
 
-    String dashboardWindow = seleniumWebDriver.getWindowHandle();
-    seleniumWebDriver.switchFromDashboardIframeToIde();
+    String dashboardWindow = seleniumWebDriverHelper.switchToIdeFrameAndWaitAvailability();
+    toastLoader.waitToastLoaderAndClickStartButton();
     ide.waitOpenedWorkspaceIsReadyToUse();
 
     explorer.waitItem(CONSOLE_JAVA_SIMPLE);
     notificationsPopupPanel.waitPopupPanelsAreClosed();
     mavenPluginStatusBar.waitClosingInfoPanel();
-    explorer.waitFolderDefinedTypeOfFolderByPath(CONSOLE_JAVA_SIMPLE, PROJECT_FOLDER);
-    explorer.waitFolderDefinedTypeOfFolderByPath(WEB_JAVA_SPRING, PROJECT_FOLDER);
+    explorer.waitDefinedTypeOfFolder(CONSOLE_JAVA_SIMPLE, PROJECT_FOLDER);
+    explorer.waitDefinedTypeOfFolder(WEB_JAVA_SPRING, PROJECT_FOLDER);
     notificationsPopupPanel.waitPopupPanelsAreClosed();
 
     switchToWindow(dashboardWindow);

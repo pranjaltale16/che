@@ -10,17 +10,14 @@
  */
 'use strict';
 
-import {CheWorkspaceAgent} from '../che-workspace-agent';
+import {CheWorkspaceAgent, IWorkspaceAgentData} from '../che-workspace-agent';
 import {CheEnvironmentRegistry} from '../environment/che-environment-registry.factory';
 import {CheJsonRpcMasterApi} from '../json-rpc/che-json-rpc-master-api';
 import {CheJsonRpcApi} from '../json-rpc/che-json-rpc-api.factory';
 import {IObservableCallbackFn, Observable} from '../../utils/observable';
 import {CheBranding} from '../../branding/che-branding.factory';
 import {CheEnvironmentManager} from '../environment/che-environment-manager.factory';
-import {ComposeEnvironmentManager} from '../environment/compose-environment-manager';
-import {DockerFileEnvironmentManager} from '../environment/docker-file-environment-manager';
-import {DockerImageEnvironmentManager} from '../environment/docker-image-environment-manager';
-import {OpenshiftEnvironmentManager} from '../environment/openshift-environment-manager';
+import {CheRecipeTypes} from '../recipe/che-recipe-types';
 
 const WS_AGENT_HTTP_LINK: string = 'wsagent/http';
 const WS_AGENT_WS_LINK: string = 'wsagent/ws';
@@ -58,10 +55,12 @@ export enum WorkspaceStatus {
  * @author Florent Benoit
  */
 export class CheWorkspace {
+
+  static $inject = ['$resource', '$http', '$q', 'cheJsonRpcApi', '$websocket', '$location', 'proxySettings', 'userDashboardConfig', 'lodash', 'cheEnvironmentRegistry', 'cheBranding', 'keycloakAuth', 'cheEnvironmentManager'];
+
   private $resource: ng.resource.IResourceService;
   private $http: ng.IHttpService;
   private $q: ng.IQService;
-  private $log: ng.ILogService;
   private $websocket: any;
   private cheJsonRpcMasterApi: CheJsonRpcMasterApi;
   private listeners: Array<any>;
@@ -76,6 +75,7 @@ export class CheWorkspace {
   private statusDefers: Object;
   private workspaceSettings: any;
   private jsonRpcApiLocation: string;
+  private workspaceLoaderUrl: string;
   /**
    * Map with instance of Observable by workspaceId.
    */
@@ -85,10 +85,8 @@ export class CheWorkspace {
    */
   private workspacePromises: Map<string, ng.IHttpPromise<any>> = new Map();
 
-
   /**
    * Default constructor that is using resource
-   * @ngInject for Dependency injection
    */
   constructor($resource: ng.resource.IResourceService,
               $http: ng.IHttpService,
@@ -100,7 +98,6 @@ export class CheWorkspace {
               userDashboardConfig: any,
               lodash: any,
               cheEnvironmentRegistry: CheEnvironmentRegistry,
-              $log: ng.ILogService,
               cheBranding: CheBranding,
               keycloakAuth: any,
               cheEnvironmentManager: CheEnvironmentManager) {
@@ -109,7 +106,6 @@ export class CheWorkspace {
     this.$q = $q;
     this.$resource = $resource;
     this.$http = $http;
-    this.$log = $log;
     this.$websocket = $websocket;
     this.lodash = lodash;
 
@@ -149,10 +145,7 @@ export class CheWorkspace {
       }
     );
 
-    cheEnvironmentRegistry.addEnvironmentManager('compose', new ComposeEnvironmentManager($log));
-    cheEnvironmentRegistry.addEnvironmentManager('dockerfile', new DockerFileEnvironmentManager($log));
-    cheEnvironmentRegistry.addEnvironmentManager('dockerimage', new DockerImageEnvironmentManager($log));
-    cheEnvironmentRegistry.addEnvironmentManager('openshift', new OpenshiftEnvironmentManager($log));
+    let recipeTypes: Array<string> = CheRecipeTypes.getValues();
 
     let keycloakToken = keycloakAuth.isPresent ? '?token=' + keycloakAuth.keycloak.token : '';
     const CONTEXT_FETCHER_ID = 'websocketContextFetcher';
@@ -163,6 +156,18 @@ export class CheWorkspace {
       cheBranding.unregisterCallback(CONTEXT_FETCHER_ID);
     };
     cheBranding.registerCallback(CONTEXT_FETCHER_ID, callback.bind(this));
+
+    this.fetchWorkspaceSettings().finally(() => {
+      // update recipe types
+      recipeTypes = lodash.uniq(recipeTypes.concat(this.getSupportedRecipeTypes()));
+      recipeTypes.forEach((recipeType: string) => {
+        // add environment managers
+        const environmentManager = cheEnvironmentManager.create(recipeType);
+        cheEnvironmentRegistry.addEnvironmentManager(recipeType, environmentManager);
+      });
+    });
+
+    this.checkWorkspaceLoader(userDashboardConfig.developmentMode, proxySettings);
   }
 
   /**
@@ -207,13 +212,14 @@ export class CheWorkspace {
       return this.workspaceAgents.get(workspaceId);
     }
 
-    let runtimeConfig = this.getWorkspaceById(workspaceId).runtime;
+    const runtimeConfig = this.getWorkspaceById(workspaceId).runtime;
     if (runtimeConfig) {
-      let machines = runtimeConfig.machines;
+      const machineToken = runtimeConfig.machineToken;
+      const machines = runtimeConfig.machines;
       let wsAgentLink: any;
       let wsAgentWebocketLink: any;
       Object.keys(machines).forEach((key: string) => {
-        let machine = machines[key];
+        const machine = machines[key];
         if (machine.servers[WS_AGENT_HTTP_LINK]) {
           wsAgentLink = machine.servers[WS_AGENT_HTTP_LINK];
         }
@@ -222,12 +228,13 @@ export class CheWorkspace {
         }
       });
 
-      let workspaceAgentData = {
+      const workspaceAgentData: IWorkspaceAgentData = {
         path: wsAgentLink.url,
         websocket: wsAgentWebocketLink.url,
-        clientId: this.cheJsonRpcMasterApi.getClientId()
+        clientId: this.cheJsonRpcMasterApi.getClientId(),
+        machineToken: machineToken
       };
-      let wsagent: CheWorkspaceAgent = new CheWorkspaceAgent(this.$resource, this.$q, this.$websocket, workspaceAgentData);
+      const wsagent: CheWorkspaceAgent = new CheWorkspaceAgent(this.$resource, this.$q, this.$websocket, workspaceAgentData);
       this.workspaceAgents.set(workspaceId, wsagent);
       return wsagent;
     }
@@ -286,7 +293,6 @@ export class CheWorkspace {
       workspaces.length = 0;
       response.data.forEach((workspace: che.IWorkspace) => {
         workspaces.push(workspace);
-        this.updateWorkspacesList(workspace);
       });
     }, (error: any) => {
       if (error && error.status === 304) {
@@ -648,6 +654,10 @@ export class CheWorkspace {
     return '/ide/' + namespace + '/' + workspaceName;
   }
 
+  getWorkspaceLoaderUrl(namespace: string, workspaceName: string): string {
+    return this.workspaceLoaderUrl ? this.workspaceLoaderUrl + namespace + '/' + workspaceName : null;
+  }
+
   /**
    * Creates deferred object which will be resolved
    * when workspace change it's status to given
@@ -796,5 +806,18 @@ export class CheWorkspace {
       wsUrl = wsProtocol + '://' + $location.host() + ':' + $location.port();
     }
     return wsUrl;
+  }
+
+  private checkWorkspaceLoader(devmode: boolean, proxySettings: string): void {
+    let url = '/workspace-loader/';
+
+    let promise = this.$http.get(url);
+    promise.then((response: {data: any}) => {
+      this.workspaceLoaderUrl = devmode ? proxySettings + url : url;
+    }, (error: any) => {
+      if (error.status !== 304) {
+        this.workspaceLoaderUrl = null;
+      }
+    });
   }
 }

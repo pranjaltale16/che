@@ -15,12 +15,13 @@ import com.google.inject.name.Named;
 import java.net.URL;
 import java.nio.file.Paths;
 import org.eclipse.che.commons.lang.NameGenerator;
+import org.eclipse.che.selenium.core.TestGroup;
 import org.eclipse.che.selenium.core.client.TestProjectServiceClient;
 import org.eclipse.che.selenium.core.client.TestUserPreferencesServiceClient;
 import org.eclipse.che.selenium.core.constant.TestGitConstants;
 import org.eclipse.che.selenium.core.constant.TestMenuCommandsConstants;
 import org.eclipse.che.selenium.core.project.ProjectTemplates;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.eclipse.che.selenium.core.workspace.TestWorkspace;
 import org.eclipse.che.selenium.pageobject.AskDialog;
 import org.eclipse.che.selenium.pageobject.Ide;
@@ -32,6 +33,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** Created by aleksandr shmaraev on 25.11.15 */
+@Test(groups = TestGroup.GITHUB)
 public class CreateAndDeleteLocalBranchTest {
   private static final String PROJECT_NAME = NameGenerator.generate("CreateLocalBranch", 4);
   private static final String MASTER_BRANCH = "master";
@@ -39,7 +41,7 @@ public class CreateAndDeleteLocalBranchTest {
 
   @Inject private TestWorkspace ws;
   @Inject private Ide ide;
-  @Inject private TestUser user;
+  @Inject private DefaultTestUser user;
 
   @Inject
   @Named("github.username")
@@ -80,7 +82,7 @@ public class CreateAndDeleteLocalBranchTest {
   @Test(priority = 2)
   public void deleteLocalBranch() {
     projectExplorer.waitProjectExplorer();
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.BRANCHES);
     git.waitBranchInTheList(MASTER_BRANCH);
     git.waitBranchInTheList(TEST_BRANCH);
@@ -93,14 +95,14 @@ public class CreateAndDeleteLocalBranchTest {
 
   private void initRepo() {
     projectExplorer.waitProjectExplorer();
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(
         TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.INITIALIZE_REPOSITORY);
     askDialog.waitFormToOpen();
     askDialog.clickOkBtn();
     askDialog.waitFormToClose();
     git.waitGitStatusBarWithMess(TestGitConstants.GIT_INITIALIZED_SUCCESS);
-    projectExplorer.selectItem(PROJECT_NAME);
+    projectExplorer.waitAndSelectItem(PROJECT_NAME);
     menu.runCommand(TestMenuCommandsConstants.Git.GIT, TestMenuCommandsConstants.Git.COMMIT);
     git.waitAndRunCommit("init");
     loader.waitOnClosed();

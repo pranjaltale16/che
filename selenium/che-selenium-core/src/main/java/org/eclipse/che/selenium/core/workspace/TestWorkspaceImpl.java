@@ -20,7 +20,7 @@ import javax.annotation.PreDestroy;
 import org.eclipse.che.api.core.model.workspace.Workspace;
 import org.eclipse.che.api.workspace.shared.dto.WorkspaceConfigDto;
 import org.eclipse.che.selenium.core.client.TestWorkspaceServiceClient;
-import org.eclipse.che.selenium.core.user.TestUser;
+import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -31,13 +31,13 @@ public class TestWorkspaceImpl implements TestWorkspace {
 
   private final String name;
   private final CompletableFuture<Void> future;
-  private final TestUser owner;
+  private final DefaultTestUser owner;
   private final AtomicReference<String> id;
   private final TestWorkspaceServiceClient workspaceServiceClient;
 
   public TestWorkspaceImpl(
       String name,
-      TestUser owner,
+      DefaultTestUser owner,
       int memoryInGB,
       WorkspaceConfigDto template,
       TestWorkspaceServiceClient testWorkspaceServiceClient) {
@@ -70,13 +70,11 @@ public class TestWorkspaceImpl implements TestWorkspace {
                 try {
                   workspaceServiceClient.delete(name, owner.getName());
                 } catch (Exception e1) {
-                  throw new IllegalStateException(
-                      format("Failed to remove workspace name='%s' when start is failed.", name),
-                      e);
+                  LOG.error("Failed to remove workspace name='{}' when start is failed.", name);
                 }
 
                 if (e instanceof IllegalStateException) {
-                  Assert.fail("Known issue https://github.com/eclipse/che/issues/8031", e);
+                  Assert.fail("Known issue https://github.com/eclipse/che/issues/9556", e);
                 } else {
                   throw new IllegalStateException(errorMessage, e);
                 }
@@ -100,7 +98,7 @@ public class TestWorkspaceImpl implements TestWorkspace {
   }
 
   @Override
-  public TestUser getOwner() {
+  public DefaultTestUser getOwner() {
     return owner;
   }
 

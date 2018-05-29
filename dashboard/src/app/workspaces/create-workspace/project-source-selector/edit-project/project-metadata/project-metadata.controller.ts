@@ -20,6 +20,9 @@ import {EditProjectService} from '../edit-project.service';
  * @author Oleksii Kurinnyi
  */
 export class ProjectMetadataController {
+
+  static $inject = ['$scope', 'projectMetadataService', 'projectSourceSelectorService', 'editProjectService'];
+
   /**
    * Project metadata service.
    */
@@ -43,6 +46,8 @@ export class ProjectMetadataController {
    */
   /* tslint:disable */
   private templateName: string;
+
+  private projectForm: ng.IFormController;
   /* tslint:enable */
   /**
    * Callback to check uniqueness of project name.
@@ -56,9 +61,9 @@ export class ProjectMetadataController {
 
   /**
    * Default constructor that is using resource injection
-   * @ngInject for Dependency injection
    */
-  constructor($scope: ng.IScope, projectMetadataService: ProjectMetadataService, projectSourceSelectorService: ProjectSourceSelectorService, editProjectService: EditProjectService) {
+  constructor($scope: ng.IScope, projectMetadataService: ProjectMetadataService, projectSourceSelectorService: ProjectSourceSelectorService,
+     editProjectService: EditProjectService) {
 
     this.projectMetadataService = projectMetadataService;
     this.projectSourceSelectorService = projectSourceSelectorService;

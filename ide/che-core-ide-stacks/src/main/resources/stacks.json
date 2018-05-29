@@ -14,7 +14,6 @@
           "machines": {
             "theia": {
               "attributes": {},
-
               "servers": {
                 "theia": {
                   "protocol": "http",
@@ -27,6 +26,9 @@
               "volumes": {
                 "projects": {
                   "path": "/projects"
+                },
+                "theia": {
+                  "path": "/home/theia"
                 }
               },
               "installers": [],
@@ -51,7 +53,7 @@
           },
           "recipe": {
             "type": "compose",
-            "content": "services:\n theia:\n  image: theiaide/theia\n  entrypoint:\n  - yarn\n  - theia\n  - start\n  - /projects\n  - --hostname=0.0.0.0\n  mem_limit: 1073741824\n dev-machine:\n  image: eclipse/che-dev:nightly\n  mem_limit: 2147483648\n  depends_on:\n    - theia",
+            "content": "services:\n theia:\n  image: eclipse/che-theia:nightly\n  mem_limit: 1073741824\n dev-machine:\n  image: eclipse/che-dev:nightly\n  mem_limit: 2147483648\n  depends_on:\n    - theia",
             "contentType": "application/x-yaml"
           }
         }
@@ -94,6 +96,9 @@
               "volumes": {
                 "projects": {
                   "path": "/projects"
+                },
+                "theia": {
+                  "path": "/home/theia"
                 }
               },
               "installers": [],
@@ -118,7 +123,7 @@
           },
           "recipe": {
             "type": "openshift",
-            "content": "---\nkind: List\nitems:\n-\n  apiVersion: v1\n  kind: Pod\n  metadata:\n    name: ws\n  spec:\n    containers:\n      -\n        image: theiaide/theia\n        command:\n          - yarn\n        args:\n          - theia\n          - start\n          - /projects\n          - --hostname=0.0.0.0\n        name: theia\n      -\n        image: eclipse/che-dev:nightly\n        name: dev",
+            "content": "---\nkind: List\nitems:\n-\n  apiVersion: v1\n  kind: Pod\n  metadata:\n    name: ws\n  spec:\n    containers:\n      -\n        image: eclipse/che-theia:nightly\n        name: theia\n      -\n        image: eclipse/che-dev:nightly\n        name: dev",
             "contentType": "application/x-yaml"
           }
         }
@@ -653,7 +658,7 @@
     "id": "go-default",
     "creator": "ide",
     "name": "Go",
-    "description": "Default Go Stack with Go 1.6.2",
+    "description": "Default Go Stack with Go 1.8.3",
     "scope": "general",
     "tags": [
       "Ubuntu",
@@ -666,7 +671,7 @@
       },
       {
         "name": "Go",
-        "version": "1.6.2"
+        "version": "1.8.3"
       }
     ],
     "workspaceConfig": {
@@ -2239,7 +2244,7 @@
           "goal": "Build"
         }
       }, {
-        "commandLine": "scl enable rh-maven33 'mvn compile vertx:run -f ${current.project.path}'",
+        "commandLine": "scl enable rh-maven33 'mvn compile vertx:run -f ${current.project.path} -Dvertx.disableDnsResolver=true'",
         "name": "run",
         "type": "custom",
         "attributes": {
@@ -2247,7 +2252,7 @@
           "goal": "Run"
         }
       }, {
-        "commandLine": "scl enable rh-maven33 'mvn compile vertx:debug -f ${current.project.path}'",
+        "commandLine": "scl enable rh-maven33 'mvn compile vertx:debug -f ${current.project.path} -Dvertx.disableDnsResolver=true'",
         "name": "debug",
         "type": "custom",
         "attributes": {
@@ -2398,6 +2403,7 @@
                 "memoryLimitBytes": "2147483648"
               },
               "installers": [
+                "org.eclipse.che.exec",
                 "org.eclipse.che.terminal",
                 "org.eclipse.che.ws-agent"
               ],
@@ -2489,6 +2495,7 @@
                 "memoryLimitBytes": "2147483648"
               },
               "installers": [
+                "org.eclipse.che.exec",
                 "org.eclipse.che.terminal",
                 "org.eclipse.che.ws-agent"
               ],
@@ -2678,6 +2685,7 @@
         "machines": {
           "dev-machine": {
             "installers": [
+              "org.eclipse.che.exec",
               "org.eclipse.che.terminal",
               "org.eclipse.che.ws-agent"
             ],
